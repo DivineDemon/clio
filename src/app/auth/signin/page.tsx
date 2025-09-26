@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { authOptions } from "@/server/auth";
 import { Github } from "lucide-react";
-import { getServerSession } from "next-auth";
+import { getServerSession, signIn } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -24,7 +24,10 @@ export default async function SignInPage() {
 					</p>
 				</div>
 				<div className="mt-8 space-y-6">
-					<form action="/api/auth/signin/github" method="post">
+					<form action={async () => {
+						"use server";
+						await signIn("github", { callbackUrl: "/dashboard" });
+					}}>
 						<Button
 							type="submit"
 							className="flex w-full items-center justify-center gap-2"
