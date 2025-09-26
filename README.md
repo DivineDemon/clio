@@ -22,6 +22,35 @@ Clio is a web service that reads any GitHub repository (public, private, or orga
 - **LLM Backend**: Open WebUI serving DeepSeek-R1
 - **Email**: SendGrid/SES/Mailgun for notifications
 
+## 📄 Application Pages & Structure
+
+### **Public Pages**
+- **`/`** - Landing Page
+- **`/auth/signin`** - Login Page
+- **`/auth/signup`** - Register Page  
+- **`/auth/forgot-password`** - Forgot Password
+- **`/help`** - Help & Documentation
+- **`/terms`** - Terms of Service
+- **`/privacy`** - Privacy Policy
+- **`/cookies`** - Cookie Policy
+- **`/dpa`** - Data Processing Agreement
+
+### **Protected Pages (Require Authentication)**
+- **`/dashboard`** - Main Dashboard
+- **`/repositories`** - Repository Selection
+- **`/generate`** - Generate README Form
+- **`/jobs/[id]`** - Job Status & Results
+- **`/history`** - Job History
+- **`/settings`** - Account Settings
+
+### **API Routes**
+- **`/api/auth/[...nextauth]`** - NextAuth.js endpoints
+- **`/api/trpc/[trpc]`** - tRPC API routes
+- **`/api/github/install`** - GitHub App installation
+- **`/api/github/webhook`** - GitHub webhooks
+- **`/api/jobs`** - Job management
+- **`/api/email`** - Email notifications
+
 ## 🚀 Development Roadmap
 
 ### Phase 1: Authentication & GitHub Integration Setup
@@ -92,23 +121,140 @@ Clio is a web service that reads any GitHub repository (public, private, or orga
 - [ ] Create reusable component library
 - [ ] Implement responsive design patterns
 
-#### 4.2 Authentication UI
-- [ ] Design and implement sign-in page
-- [ ] Create user dashboard layout
-- [ ] Build GitHub App installation flow
-- [ ] Add user profile and settings pages
+#### 4.2 Page Structure & Routing
+- [ ] Set up Next.js App Router page structure
+- [ ] Implement protected route middleware
+- [ ] Create layout components and navigation
+- [ ] Add error boundaries and loading states
 
-#### 4.3 Repository Management UI
-- [ ] Create repository selection interface
+#### 4.3 Landing Page (`/`)
+**Content Requirements:**
+- Hero section with Clio branding and tagline
+- Feature highlights (GitHub integration, async processing, no repo modification)
+- How it works (3-step process: Connect → Generate → Download)
+- Pricing information (free tier + premium features)
+- Call-to-action buttons (Get Started, View Examples)
+- Footer with links, social media, and legal pages
+
+#### 4.4 Authentication Pages
+**Login Page (`/auth/signin`)**
+- GitHub OAuth sign-in button
+- "Remember me" checkbox
+- Link to register page
+- Link to forgot password
+- Terms of service and privacy policy links
+- Demo mode option for testing
+
+**Register Page (`/auth/signup`)**
+- GitHub OAuth sign-up button
+- Email collection (optional for notifications)
+- Terms of service acceptance checkbox
+- Privacy policy acknowledgment
+- Link to login page
+- Account type selection (Personal/Organization)
+
+**Forgot Password Page (`/auth/forgot-password`)**
+- Email input field
+- Send reset link button
+- Back to login link
+- Password reset instructions
+- Security notice about GitHub OAuth
+
+#### 4.5 Dashboard (`/dashboard`)
+**Content Requirements:**
+- Welcome message with user's GitHub username/avatar
+- GitHub App installation status card
+- Quick actions section:
+  - "Generate New README" button
+  - "Browse Repositories" button
+  - "View History" button
+- Recent activity feed (last 5 generation jobs)
+- Repository access status overview
+- Quick stats (total READMEs generated, success rate)
+- Navigation sidebar with main sections
+
+#### 4.6 Account Settings (`/settings`)
+**Content Requirements:**
+- Profile section:
+  - GitHub profile information (read-only)
+  - Display name customization
+  - Avatar display
+- Notification preferences:
+  - Email notifications toggle
+  - Job completion notifications
+  - Weekly digest option
+- GitHub App management:
+  - Installation status per organization
+  - Reinstall/update app buttons
+  - Permission overview
+- Account actions:
+  - Export data option
+  - Delete account button
+  - Sign out button
+- Billing section (for future premium features)
+
+#### 4.7 Repository Management UI
+- [ ] Create repository selection interface (`/repositories`)
 - [ ] Build installation status indicators
 - [ ] Implement repository access validation UI
-- [ ] Add repository browsing and selection
+- [ ] Add repository browsing and search functionality
+- [ ] Create repository details modal/page
 
-#### 4.4 Job Management Interface
-- [ ] Design job creation form
-- [ ] Build job status tracking interface
-- [ ] Create job history and results viewer
+#### 4.8 Additional Pages
+
+**Repository Selection (`/repositories`)**
+- List of accessible repositories (personal + organizations)
+- Search and filter functionality
+- Installation status indicators
+- Repository metadata (language, stars, last updated)
+- "Generate README" action buttons
+
+**Generate README (`/generate`)**
+- Repository selection dropdown/search
+- Generation options:
+  - Template selection (Standard, Minimal, Comprehensive)
+  - Include/exclude sections toggle
+  - Custom instructions textarea
+- Preview of selected repository structure
+- Generate button with progress indicator
+
+**Job Status (`/jobs/[id]`)**
+- Real-time job progress updates
+- Repository information and commit SHA
+- Generation options used
+- Progress bar and status messages
+- Cancel job option (if still running)
+- Download result button (when complete)
+- Error details (if failed)
+
+**Job History (`/history`)**
+- Paginated list of all generation jobs
+- Filter by status, date, repository
+- Search functionality
+- Job details modal
+- Bulk actions (download, delete)
+- Export history option
+
+**Help & Documentation (`/help`)**
+- Getting started guide
+- GitHub App installation instructions
+- FAQ section
+- Troubleshooting guide
+- Contact support form
+- API documentation (for future)
+
+**Legal Pages**
+- Terms of Service (`/terms`)
+- Privacy Policy (`/privacy`)
+- Cookie Policy (`/cookies`)
+- Data Processing Agreement (`/dpa`)
+
+#### 4.9 Job Management Interface
+- [ ] Design job creation form (`/generate`)
+- [ ] Build job status tracking interface (`/jobs/[id]`)
+- [ ] Create job history and results viewer (`/history`)
 - [ ] Implement download and copy functionality
+- [ ] Add job comparison and diff features
 
 ### Phase 5: README Generation Pipeline
 **Duration**: 2-3 weeks
@@ -194,26 +340,92 @@ Clio is a web service that reads any GitHub repository (public, private, or orga
 - Email service provider account
 
 ### Environment Variables
+
+Create a `.env.local` file in your project root by copying `.env.example`:
+
+```bash
+cp .env.example .env.local
+```
+
+Then fill in your actual values. Here's what you need to set up:
+
+#### **Required for Development**
+
+1. **Database (Neon PostgreSQL)**:
+   - Sign up at [neon.tech](https://neon.tech)
+   - Create a new project
+   - Copy the connection string to `DATABASE_URL`
+
+2. **GitHub OAuth App**:
+   - Go to [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/applications/new)
+   - Create new OAuth App
+   - Set Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
+   - Copy Client ID and Client Secret
+
+3. **GitHub App** (for repository access):
+   - Go to [GitHub Settings > Developer settings > GitHub Apps](https://github.com/settings/apps/new)
+   - Create new GitHub App with these permissions:
+     - Repository: Contents (Read), Metadata (Read)
+     - Account: Email addresses (Read)
+   - Set webhook URL: `http://localhost:3000/api/github/webhook`
+   - Download private key and copy App ID
+
+4. **Email Service** (EmailJS):
+   - Sign up at [emailjs.com](https://emailjs.com)
+   - Create an email service (Gmail, Outlook, etc.)
+   - Create email templates for notifications
+   - Get Service ID, Template ID, and Public Key
+
+5. **LLM Backend**:
+   - Set up Open WebUI with DeepSeek-R1 model
+   - Ensure the API is accessible at your specified URL
+   - No API key needed for self-hosted setup
+
+#### **Environment Variables Overview**
 ```bash
 # Database
 DATABASE_URL="postgresql://..."
 
+# NextAuth.js
+NEXTAUTH_SECRET="your-super-secret-key-min-32-chars"
+NEXTAUTH_URL="http://localhost:3000"
+
+# GitHub OAuth
+GITHUB_CLIENT_ID="your-github-oauth-client-id"
+GITHUB_CLIENT_SECRET="your-github-oauth-client-secret"
+
 # GitHub App
 GITHUB_APP_ID="123456"
 GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
-GITHUB_CLIENT_ID="your_client_id"
-GITHUB_CLIENT_SECRET="your_client_secret"
-NEXTAUTH_SECRET="your_nextauth_secret"
-NEXTAUTH_URL="http://localhost:3000"
+GITHUB_WEBHOOK_SECRET="your-webhook-secret"
 
-# Email Service
-EMAIL_API_KEY="your_email_api_key"
-EMAIL_FROM="noreply@clio.dev"
+# Email Service (EmailJS)
+EMAILJS_SERVICE_ID="your-service-id"
+EMAILJS_TEMPLATE_ID="your-template-id"
+EMAILJS_PUBLIC_KEY="your-public-key"
+EMAIL_FROM="noreply@yourdomain.com"
 
-# LLM Backend
+# LLM Backend (Self-hosted)
 LLM_API_URL="http://localhost:8080"
-LLM_API_KEY="your_llm_api_key"
 ```
+
+#### **Redis (Optional - Only for Production Job Queue)**
+Redis is only needed if you want to implement a proper job queue system for production. For development and small-scale usage, you can:
+
+- **Skip Redis**: Use simple database-based job processing
+- **Add Redis later**: When you need horizontal scaling and advanced job management
+
+**When you need Redis:**
+- Multiple server instances
+- Advanced job scheduling and retry logic
+- Job priority management
+- Real-time job progress updates
+- High-volume README generation
+
+**For now, you can skip Redis and use:**
+- Database-based job processing
+- Simple async/await patterns
+- File-based job status tracking
 
 ### Getting Started
 ```bash
