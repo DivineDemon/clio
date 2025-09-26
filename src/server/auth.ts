@@ -19,6 +19,12 @@ export const authOptions: NextAuthOptions = {
 	],
 	callbacks: {
 		async signIn({ user, account, profile }) {
+			console.log("🔐 SignIn callback triggered:", { 
+				user: { id: user.id, email: user.email, name: user.name },
+				account: { provider: account?.provider, type: account?.type },
+				profile: profile ? { id: (profile as any).id, login: (profile as any).login } : null
+			});
+
 			if (account?.provider === "github" && profile && user.email) {
 				const githubProfile = profile as {
 					id?: number;
@@ -26,23 +32,29 @@ export const authOptions: NextAuthOptions = {
 					avatar_url?: string;
 					name?: string;
 				};
-				await db.user.upsert({
-					where: { email: user.email },
-					update: {
-						githubId: githubProfile.id?.toString(),
-						username: githubProfile.login,
-						avatarUrl: githubProfile.avatar_url,
-						name: githubProfile.name || githubProfile.login,
-					},
-					create: {
-						id: user.id,
-						email: user.email,
-						name: githubProfile.name || githubProfile.login,
-						githubId: githubProfile.id?.toString(),
-						username: githubProfile.login,
-						avatarUrl: githubProfile.avatar_url,
-					},
-				});
+
+				try {
+					const upsertedUser = await db.user.upsert({
+						where: { email: user.email },
+						update: {
+							githubId: githubProfile.id?.toString(),
+							username: githubProfile.login,
+							avatarUrl: githubProfile.avatar_url,
+							name: githubProfile.name || githubProfile.login,
+						},
+						create: {
+							email: user.email,
+							name: githubProfile.name || githubProfile.login,
+							githubId: githubProfile.id?.toString(),
+							username: githubProfile.login,
+							avatarUrl: githubProfile.avatar_url,
+						},
+					});
+					console.log("✅ User upserted successfully:", upsertedUser);
+				} catch (error) {
+					console.error("❌ Error upserting user:", error);
+					throw error;
+				}
 			}
 
 			return true;

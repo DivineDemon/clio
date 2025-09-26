@@ -1,19 +1,47 @@
-import { env } from "@/env";
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "~/server/db";
 
-export async function GET() {
-  // Only allow in development or with a secret key
-  if (process.env.NODE_ENV === "production" && !process.env.DEBUG_SECRET) {
-    return new Response("Not found", { status: 404 });
+export async function GET(request: NextRequest) {
+  try {
+    // Check environment variables
+    const envCheck = {
+      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      GITHUB_CLIENT_ID: !!process.env.GITHUB_CLIENT_ID,
+      GITHUB_CLIENT_SECRET: !!process.env.GITHUB_CLIENT_SECRET,
+      DATABASE_URL: !!process.env.DATABASE_URL,
+    };
+
+    // Check database connection and user count
+    const userCount = await db.user.count();
+    const users = await db.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        githubId: true,
+        username: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+
+    return NextResponse.json({
+      status: "success",
+      environment: envCheck,
+      database: {
+        connected: true,
+        userCount,
+        recentUsers: users,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: "error",
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString(),
+    }, { status: 500 });
   }
-
-  const debugInfo = {
-    hasNextAuthSecret: !!env.NEXTAUTH_SECRET,
-    hasNextAuthUrl: !!env.NEXTAUTH_URL,
-    hasGitHubClientId: !!env.GITHUB_CLIENT_ID,
-    hasGitHubClientSecret: !!env.GITHUB_CLIENT_SECRET,
-    nextAuthUrl: env.NEXTAUTH_URL,
-    nodeEnv: process.env.NODE_ENV,
-  };
-
-  return Response.json(debugInfo);
 }
