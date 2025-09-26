@@ -1,11 +1,9 @@
 import { env } from "@/env";
 import { db } from "@/server/db";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
 export const authOptions: NextAuthOptions = {
-	adapter: PrismaAdapter(db),
 	providers: [
 		GitHubProvider({
 			clientId: env.GITHUB_CLIENT_ID,
@@ -30,7 +28,23 @@ export const authOptions: NextAuthOptions = {
 					: null,
 			});
 
-			if (account?.provider === "github" && profile && user.email) {
+			// Allow all sign-ins, user creation is handled in JWT callback
+			return true;
+		},
+		async jwt({ token, user, account, profile }) {
+			console.log("🔑 JWT callback triggered:", {
+				token: { email: token.email, name: token.name },
+				user: user ? { id: user.id, email: user.email, name: user.name } : null,
+				account: { provider: account?.provider, type: account?.type },
+				profile: profile
+					? {
+							id: (profile as { id?: number }).id,
+							login: (profile as { login?: string }).login,
+						}
+					: null,
+			});
+
+			if (account?.provider === "github" && profile && user?.email) {
 				const githubProfile = profile as {
 					id?: number;
 					login?: string;
@@ -55,42 +69,36 @@ export const authOptions: NextAuthOptions = {
 							avatarUrl: githubProfile.avatar_url,
 						},
 					});
-					console.log("✅ User upserted successfully:", upsertedUser);
+					console.log(
+						"✅ User upserted successfully in JWT callback:",
+						upsertedUser,
+					);
+
+					// Add user data to token
+					token.id = upsertedUser.id;
+					token.githubId = upsertedUser.githubId;
+					token.username = upsertedUser.username;
+					token.avatarUrl = upsertedUser.avatarUrl;
 				} catch (error) {
-					console.error("❌ Error upserting user:", error);
+					console.error("❌ Error upserting user in JWT callback:", error);
 					throw error;
 				}
 			}
 
-			return true;
+			return token;
 		},
-		async session({ session, user }) {
-			if (session.user) {
-				const dbUser = await db.user.findUnique({
-					where: { id: user.id },
-					select: {
-						id: true,
-						name: true,
-						email: true,
-						image: true,
-						githubId: true,
-						username: true,
-						avatarUrl: true,
-					},
-				});
-
-				if (dbUser) {
-					const extendedUser = session.user as typeof session.user & {
-						id: string;
-						githubId: string | null;
-						username: string | null;
-						avatarUrl: string | null;
-					};
-					extendedUser.id = dbUser.id;
-					extendedUser.githubId = dbUser.githubId;
-					extendedUser.username = dbUser.username;
-					extendedUser.avatarUrl = dbUser.avatarUrl;
-				}
+		async session({ session, token }) {
+			if (session.user && token) {
+				const extendedUser = session.user as typeof session.user & {
+					id: string;
+					githubId: string | null;
+					username: string | null;
+					avatarUrl: string | null;
+				};
+				extendedUser.id = token.id as string;
+				extendedUser.githubId = token.githubId as string | null;
+				extendedUser.username = token.username as string | null;
+				extendedUser.avatarUrl = token.avatarUrl as string | null;
 			}
 
 			return session;
@@ -101,7 +109,7 @@ export const authOptions: NextAuthOptions = {
 		error: "/auth/error",
 	},
 	session: {
-		strategy: "database",
+		strategy: "jwt",
 	},
 	debug: env.NODE_ENV === "development",
 };
