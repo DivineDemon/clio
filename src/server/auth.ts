@@ -19,10 +19,15 @@ export const authOptions: NextAuthOptions = {
 	],
 	callbacks: {
 		async signIn({ user, account, profile }) {
-			console.log("🔐 SignIn callback triggered:", { 
+			console.log("🔐 SignIn callback triggered:", {
 				user: { id: user.id, email: user.email, name: user.name },
 				account: { provider: account?.provider, type: account?.type },
-				profile: profile ? { id: (profile as any).id, login: (profile as any).login } : null
+				profile: profile
+					? {
+							id: (profile as { id?: number }).id,
+							login: (profile as { login?: string }).login,
+						}
+					: null,
 			});
 
 			if (account?.provider === "github" && profile && user.email) {
