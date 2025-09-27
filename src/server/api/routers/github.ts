@@ -18,7 +18,7 @@ export const githubRouter = createTRPCRouter({
 		)
 		.query(async ({ input }) => {
 			const installed = await isAppInstalled(input.owner, input.repo);
-			const installationUrl = getInstallationUrl(input.owner);
+			const installationUrl = await getInstallationUrl(input.owner);
 
 			return {
 				installed,

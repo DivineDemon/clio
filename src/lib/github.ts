@@ -3,12 +3,15 @@ import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 
 const APP_ID = Number(env.GITHUB_APP_ID);
-const PRIVATE_KEY = env.GITHUB_PRIVATE_KEY.replace(/\\n/g, '\n');
+const PRIVATE_KEY = env.GITHUB_PRIVATE_KEY.replace(/\\n/g, "\n");
 
-if (env.NODE_ENV === 'development') {
-	console.log('GitHub App ID:', APP_ID);
-	console.log('Private key starts with:', PRIVATE_KEY.substring(0, 50) + '...');
-	console.log('Private key ends with:', '...' + PRIVATE_KEY.substring(PRIVATE_KEY.length - 50));
+if (env.NODE_ENV === "development") {
+	console.log("GitHub App ID:", APP_ID);
+	console.log("Private key starts with:", `${PRIVATE_KEY.substring(0, 50)}...`);
+	console.log(
+		"Private key ends with:",
+		`...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`,
+	);
 }
 
 const octokitApp = new Octokit({
@@ -76,9 +79,23 @@ export async function isAppInstalled(
 	return installationId !== null;
 }
 
-export function getInstallationUrl(owner?: string) {
-	const baseUrl = "https://github.com/apps/clio/installations/new";
-	return owner ? `${baseUrl}?target=${owner}` : baseUrl;
+export async function getInstallationUrl(owner?: string) {
+	try {
+		const { data: app } = await octokitApp.rest.apps.getAuthenticated();
+
+		const appSlug = app?.slug;
+		if (!appSlug) {
+			throw new Error("Could not get app slug from GitHub API");
+		}
+		const baseUrl = `https://github.com/apps/${appSlug}/installations/new`;
+
+		return owner ? `${baseUrl}?target=${owner}` : baseUrl;
+	} catch (error) {
+		console.error("Failed to get GitHub App info:", error);
+		const fallbackUrl =
+			"https://github.com/apps/clio-muse-of-history/installations/new";
+		return owner ? `${fallbackUrl}?target=${owner}` : fallbackUrl;
+	}
 }
 
 export function verifyWebhookSignature(

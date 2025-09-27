@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 		const installed = await isAppInstalled(owner, repo);
 
 		if (!installed) {
-			const installationUrl = getInstallationUrl(owner);
+			const installationUrl = await getInstallationUrl(owner);
 			return NextResponse.json(
 				{
 					error: "GitHub App not installed",
