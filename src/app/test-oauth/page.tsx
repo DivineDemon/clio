@@ -30,10 +30,10 @@ export default function TestOAuthPage() {
             </a>
           </Button>
           
-          {/* Method 3: Manual GitHub OAuth URL */}
+          {/* Method 3: NextAuth OAuth URL */}
           <Button asChild className="w-full">
-            <a href="https://github.com/login/oauth/authorize?client_id=Ov23li5WHx2ycTK3myKK&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback%2Fgithub&scope=read:user%20user:email&state=test">
-              Method 3: Direct GitHub OAuth URL
+            <a href="/api/auth/signin/github?callbackUrl=http://localhost:3000/dashboard">
+              Method 3: NextAuth OAuth URL with callback
             </a>
           </Button>
           
