@@ -1,7 +1,10 @@
 import GithubLoginButton from "@/components/auth/github-login-button";
 import GithubLogoutButton from "@/components/auth/github-logout-button";
+import { buttonVariants } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 const Page = async () => {
@@ -28,7 +31,19 @@ const Page = async () => {
 							</span>
 						</div>
 					</div>
-					<GithubLogoutButton />
+					<div className="grid w-full grid-cols-2 gap-2.5">
+						<GithubLogoutButton />
+						<Link
+							href="/check"
+							className={cn(
+								buttonVariants({
+									variant: "default",
+								}),
+							)}
+						>
+							Check
+						</Link>
+					</div>
 				</div>
 			) : (
 				<GithubLoginButton className="w-auto" />
