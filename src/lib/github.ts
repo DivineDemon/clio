@@ -71,12 +71,59 @@ try {
   );
 }
 
+// Test private key format more thoroughly
+function validatePrivateKey(key: string): boolean {
+	try {
+		// Check for proper headers
+		if (!key.includes("-----BEGIN RSA PRIVATE KEY-----")) {
+			console.error("❌ Missing BEGIN header");
+			return false;
+		}
+		if (!key.includes("-----END RSA PRIVATE KEY-----")) {
+			console.error("❌ Missing END header");
+			return false;
+		}
+		
+		// Check for proper line breaks
+		if (!key.includes("\n")) {
+			console.error("❌ No newlines found");
+			return false;
+		}
+		
+		// Check for minimum length (RSA keys are typically 1600+ chars)
+		if (key.length < 1600) {
+			console.error(`❌ Key too short: ${key.length} chars`);
+			return false;
+		}
+		
+		// Try to create a minimal test to validate the key format
+		try {
+			const testAuth = createAppAuth({
+				appId: 12345, // Dummy app ID for testing
+				privateKey: key,
+			});
+			console.log("✅ Private key format validation passed");
+			return true;
+		} catch (testError) {
+			console.error("❌ Private key format validation failed:", (testError as Error).message);
+			return false;
+		}
+	} catch (error) {
+		console.error("❌ Private key validation error:", error);
+		return false;
+	}
+}
+
 if (env.NODE_ENV === "development") {
   console.log("GitHub App ID:", APP_ID);
   console.log("Private key starts with:", `${PRIVATE_KEY.substring(0, 50)}...`);
   console.log(
     "Private key ends with:",
     `...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`
+  );
+  console.log(
+    "Private key validation:",
+    validatePrivateKey(PRIVATE_KEY) ? "✅ PASSED" : "❌ FAILED"
   );
 }
 
@@ -145,38 +192,64 @@ try {
 }
 
 export async function getRepoInstallation(owner: string, repo: string) {
-	try {
-		const { data } = await octokitApp.rest.apps.getRepoInstallation({
-			owner,
-			repo,
-		});
-		return data.id;
-	} catch (error) {
-		console.error(`Failed to get installation for ${owner}/${repo}:`, error);
-		return null;
-	}
+  try {
+    console.log(`🔍 Attempting to get installation for ${owner}/${repo}...`);
+    console.log(`🔍 Using App ID: ${APP_ID}`);
+    console.log(`🔍 Private key length: ${PRIVATE_KEY.length}`);
+
+    const { data } = await octokitApp.rest.apps.getRepoInstallation({
+      owner,
+      repo,
+    });
+
+    console.log(`✅ Successfully got installation ID: ${data.id}`);
+    return data.id;
+  } catch (error) {
+    console.error(`❌ Failed to get installation for ${owner}/${repo}:`, error);
+    console.error(`❌ Error details:`, {
+      message: (error as Error).message,
+      code: (error as any).code,
+      status: (error as any).status,
+    });
+    return null;
+  }
 }
 
 export async function getInstallationToken(installationId: number) {
-	try {
-		const auth = createAppAuth({
-			appId: APP_ID,
-			privateKey: PRIVATE_KEY,
-		});
+  try {
+    console.log(
+      `🔑 Attempting to get installation token for ID: ${installationId}`
+    );
+    console.log(`🔑 Using App ID: ${APP_ID}`);
+    console.log(`🔑 Private key preview: ${PRIVATE_KEY.substring(0, 50)}...`);
 
-		const installationAuth = await auth({
-			type: "installation",
-			installationId,
-		});
+    const auth = createAppAuth({
+      appId: APP_ID,
+      privateKey: PRIVATE_KEY,
+    });
 
-		return installationAuth.token;
-	} catch (error) {
-		console.error(
-			`Failed to get installation token for ${installationId}:`,
-			error,
-		);
-		return null;
-	}
+    console.log(`🔑 Created auth instance, requesting installation token...`);
+    const installationAuth = await auth({
+      type: "installation",
+      installationId,
+    });
+
+    console.log(
+      `✅ Successfully got installation token (length: ${installationAuth.token?.length})`
+    );
+    return installationAuth.token;
+  } catch (error) {
+    console.error(
+      `❌ Failed to get installation token for ${installationId}:`,
+      error
+    );
+    console.error(`❌ Token generation error details:`, {
+      message: (error as Error).message,
+      code: (error as any).code,
+      opensslError: (error as any).opensslErrorStack,
+    });
+    return null;
+  }
 }
 
 export async function createInstallationOctokit(owner: string, repo: string) {
