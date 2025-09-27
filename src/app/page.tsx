@@ -31,7 +31,7 @@ const Page = async () => {
 					<GithubLogoutButton />
 				</div>
 			) : (
-				<GithubLoginButton />
+				<GithubLoginButton className="w-auto" />
 			)}
 		</div>
 	);
