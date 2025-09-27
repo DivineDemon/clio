@@ -3,7 +3,22 @@ import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 
 const APP_ID = Number(env.GITHUB_APP_ID);
-const PRIVATE_KEY = env.GITHUB_PRIVATE_KEY.replace(/\\n/g, "\n");
+
+let PRIVATE_KEY: string;
+try {
+	PRIVATE_KEY = env.GITHUB_PRIVATE_KEY.replace(/\\n/g, "\n")
+		.replace(/\\r/g, "\r")
+		.replace(/\\t/g, "\t");
+
+	if (!PRIVATE_KEY.includes("BEGIN") || !PRIVATE_KEY.includes("END")) {
+		throw new Error("Invalid private key format - missing BEGIN/END markers");
+	}
+} catch (error) {
+	console.error("Private key formatting error:", error);
+	throw new Error(
+		`Failed to format GitHub private key: ${error instanceof Error ? error.message : "Unknown error"}`,
+	);
+}
 
 if (env.NODE_ENV === "development") {
 	console.log("GitHub App ID:", APP_ID);
@@ -14,13 +29,24 @@ if (env.NODE_ENV === "development") {
 	);
 }
 
-const octokitApp = new Octokit({
-	authStrategy: createAppAuth,
-	auth: {
-		appId: APP_ID,
-		privateKey: PRIVATE_KEY,
-	},
-});
+let octokitApp: Octokit;
+try {
+	octokitApp = new Octokit({
+		authStrategy: createAppAuth,
+		auth: {
+			appId: APP_ID,
+			privateKey: PRIVATE_KEY,
+		},
+	});
+} catch (error) {
+	console.error("Failed to create Octokit instance:", error);
+	console.error("Private key preview:", PRIVATE_KEY.substring(0, 100));
+	throw new Error(
+		`Failed to initialize GitHub App: ${
+			error instanceof Error ? error.message : "Unknown error"
+		}`,
+	);
+}
 
 export async function getRepoInstallation(owner: string, repo: string) {
 	try {
