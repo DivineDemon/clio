@@ -34,6 +34,17 @@ export default async function SignInPage() {
 							Sign in with GitHub
 						</Button>
 					</form>
+					<div className="text-center">
+						<p className="text-sm text-muted-foreground">
+							Having trouble? Try this direct link:{" "}
+							<a 
+								href="/api/auth/signin/github" 
+								className="text-primary hover:underline"
+							>
+								Direct GitHub Sign-in
+							</a>
+						</p>
+					</div>
 					<div className="text-center text-muted-foreground text-sm">
 						By signing in, you agree to our&nbsp;
 						<Link href="/terms" className="text-primary hover:underline">
