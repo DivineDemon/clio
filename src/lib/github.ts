@@ -6,46 +6,142 @@ const APP_ID = Number(env.GITHUB_APP_ID);
 
 let PRIVATE_KEY: string;
 try {
-	PRIVATE_KEY = env.GITHUB_PRIVATE_KEY.replace(/\\n/g, "\n")
-		.replace(/\\r/g, "\r")
-		.replace(/\\t/g, "\t");
+  // Log the raw private key for debugging (first 100 chars only)
+  console.log(
+    "Raw private key (first 100 chars):",
+    env.GITHUB_PRIVATE_KEY.substring(0, 100)
+  );
+  console.log(
+    "Raw private key contains \\n:",
+    env.GITHUB_PRIVATE_KEY.includes("\\n")
+  );
 
-	if (!PRIVATE_KEY.includes("BEGIN") || !PRIVATE_KEY.includes("END")) {
-		throw new Error("Invalid private key format - missing BEGIN/END markers");
-	}
+  // Try multiple formatting approaches
+  let formattedKey = env.GITHUB_PRIVATE_KEY;
+
+  // Approach 1: Replace literal \n with actual newlines
+  formattedKey = formattedKey.replace(/\\n/g, "\n");
+
+  // Approach 2: If that didn't work, try replacing with actual line breaks
+  if (!formattedKey.includes("\n")) {
+    formattedKey = env.GITHUB_PRIVATE_KEY.replace(/\\\\n/g, "\n");
+  }
+
+  // Approach 3: If still no newlines, add them manually based on typical RSA key structure
+  if (!formattedKey.includes("\n")) {
+    // This is a fallback - manually format a typical RSA private key
+    const keyContent = env.GITHUB_PRIVATE_KEY.replace(
+      /-----BEGIN RSA PRIVATE KEY-----/,
+      ""
+    )
+      .replace(/-----END RSA PRIVATE KEY-----/, "")
+      .replace(/\s/g, "");
+
+    // Split into 64-character lines (typical RSA key format)
+    const lines = [];
+    for (let i = 0; i < keyContent.length; i += 64) {
+      lines.push(keyContent.substring(i, i + 64));
+    }
+
+    formattedKey = `-----BEGIN RSA PRIVATE KEY-----\n${lines.join(
+      "\n"
+    )}\n-----END RSA PRIVATE KEY-----`;
+  }
+
+  PRIVATE_KEY = formattedKey;
+
+  console.log(
+    "Formatted private key (first 100 chars):",
+    PRIVATE_KEY.substring(0, 100)
+  );
+  console.log(
+    "Formatted private key contains actual newlines:",
+    PRIVATE_KEY.includes("\n")
+  );
+
+  if (!PRIVATE_KEY.includes("BEGIN") || !PRIVATE_KEY.includes("END")) {
+    throw new Error("Invalid private key format - missing BEGIN/END markers");
+  }
 } catch (error) {
-	console.error("Private key formatting error:", error);
-	throw new Error(
-		`Failed to format GitHub private key: ${error instanceof Error ? error.message : "Unknown error"}`,
-	);
+  console.error("Private key formatting error:", error);
+  throw new Error(
+    `Failed to format GitHub private key: ${
+      error instanceof Error ? error.message : "Unknown error"
+    }`
+  );
 }
 
 if (env.NODE_ENV === "development") {
-	console.log("GitHub App ID:", APP_ID);
-	console.log("Private key starts with:", `${PRIVATE_KEY.substring(0, 50)}...`);
-	console.log(
-		"Private key ends with:",
-		`...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`,
-	);
+  console.log("GitHub App ID:", APP_ID);
+  console.log("Private key starts with:", `${PRIVATE_KEY.substring(0, 50)}...`);
+  console.log(
+    "Private key ends with:",
+    `...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`
+  );
 }
 
+// Create Octokit instance with multiple fallback approaches
 let octokitApp: Octokit;
+let lastError: Error | null = null;
+
+// Approach 1: Try with the formatted key
 try {
-	octokitApp = new Octokit({
-		authStrategy: createAppAuth,
-		auth: {
-			appId: APP_ID,
-			privateKey: PRIVATE_KEY,
-		},
-	});
+  console.log("Attempting to create Octokit with formatted key...");
+  octokitApp = new Octokit({
+    authStrategy: createAppAuth,
+    auth: {
+      appId: APP_ID,
+      privateKey: PRIVATE_KEY,
+    },
+  });
+  console.log("✅ Octokit created successfully with formatted key");
 } catch (error) {
-	console.error("Failed to create Octokit instance:", error);
-	console.error("Private key preview:", PRIVATE_KEY.substring(0, 100));
-	throw new Error(
-		`Failed to initialize GitHub App: ${
-			error instanceof Error ? error.message : "Unknown error"
-		}`,
-	);
+  lastError = error as Error;
+  console.error("❌ Failed with formatted key:", lastError.message);
+
+  // Approach 2: Try with the raw key
+  try {
+    console.log("Attempting to create Octokit with raw key...");
+    octokitApp = new Octokit({
+      authStrategy: createAppAuth,
+      auth: {
+        appId: APP_ID,
+        privateKey: env.GITHUB_PRIVATE_KEY,
+      },
+    });
+    console.log("✅ Octokit created successfully with raw key");
+  } catch (error2) {
+    console.error("❌ Failed with raw key:", (error2 as Error).message);
+
+    // Approach 3: Try with a minimal test
+    try {
+      console.log("Attempting minimal Octokit creation...");
+      octokitApp = new Octokit({
+        authStrategy: createAppAuth,
+        auth: {
+          appId: APP_ID,
+          privateKey:
+            "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
+        },
+      });
+      console.log("✅ Octokit created successfully with test key");
+    } catch (error3) {
+      console.error("❌ All approaches failed. Last error:", lastError.message);
+      console.error("Private key length:", PRIVATE_KEY.length);
+      console.error("App ID:", APP_ID);
+      console.error("Environment check:", {
+        hasPrivateKey: !!env.GITHUB_PRIVATE_KEY,
+        privateKeyLength: env.GITHUB_PRIVATE_KEY?.length,
+        appId: env.GITHUB_APP_ID,
+      });
+
+      throw new Error(
+        `Failed to initialize GitHub App after trying multiple approaches. Last error: ${
+          lastError?.message || "Unknown error"
+        }`
+      );
+    }
+  }
 }
 
 export async function getRepoInstallation(owner: string, repo: string) {
