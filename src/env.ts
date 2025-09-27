@@ -4,10 +4,10 @@ import { z } from "zod";
 export const env = createEnv({
 	server: {
 		DATABASE_URL: z.string().url(),
-		NEXTAUTH_SECRET: z.string().min(32),
+		AUTH_SECRET: z.string().min(32),
 		NEXTAUTH_URL: z.string().url(),
-		GITHUB_CLIENT_ID: z.string().min(1),
-		GITHUB_CLIENT_SECRET: z.string().min(1),
+		AUTH_GITHUB_ID: z.string().min(1),
+		AUTH_GITHUB_SECRET: z.string().min(1),
 		GITHUB_APP_ID: z.string().min(1),
 		GITHUB_PRIVATE_KEY: z.string().min(1),
 		GITHUB_WEBHOOK_SECRET: z.string().min(1),
@@ -25,10 +25,10 @@ export const env = createEnv({
 	client: {},
 	runtimeEnv: {
 		DATABASE_URL: process.env.DATABASE_URL,
-		NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+		AUTH_SECRET: process.env.AUTH_SECRET,
 		NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-		GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-		GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+		AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID,
+		AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
 		GITHUB_APP_ID: process.env.GITHUB_APP_ID,
 		GITHUB_PRIVATE_KEY: process.env.GITHUB_PRIVATE_KEY,
 		GITHUB_WEBHOOK_SECRET: process.env.GITHUB_WEBHOOK_SECRET,

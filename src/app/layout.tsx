@@ -3,7 +3,7 @@ import "@/assets/css/globals.css";
 import type { Metadata } from "next";
 import { Libre_Baskerville } from "next/font/google";
 
-import ThemeProvider from "@/components/theme-provider";
+import Providers from "@/components/providers";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
@@ -28,14 +28,9 @@ export default function RootLayout({
 			className={`${libre_baskerville.variable}`}
 		>
 			<body>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="system"
-					enableSystem
-					disableTransitionOnChange
-				>
+				<Providers>
 					<TRPCReactProvider>{children}</TRPCReactProvider>
-				</ThemeProvider>
+				</Providers>
 			</body>
 		</html>
 	);

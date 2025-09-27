@@ -360,7 +360,8 @@ Then fill in your actual values. Here's what you need to set up:
    - Go to [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/applications/new)
    - Create new OAuth App
    - Set Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
-   - Copy Client ID and Client Secret
+   - Copy Client ID → `AUTH_GITHUB_ID`
+   - Copy Client Secret → `AUTH_GITHUB_SECRET`
 
 3. **GitHub App** (for repository access):
    - Go to [GitHub Settings > Developer settings > GitHub Apps](https://github.com/settings/apps/new)
@@ -368,17 +369,23 @@ Then fill in your actual values. Here's what you need to set up:
      - Repository: Contents (Read), Metadata (Read)
      - Account: Email addresses (Read)
    - Set webhook URL: `http://localhost:3000/api/github/webhook`
-   - Download private key and copy App ID
+   - Copy App ID → `GITHUB_APP_ID`
+   - Download private key → `GITHUB_PRIVATE_KEY`
+   - Generate webhook secret → `GITHUB_WEBHOOK_SECRET`
 
 4. **Email Service** (EmailJS):
    - Sign up at [emailjs.com](https://emailjs.com)
    - Create an email service (Gmail, Outlook, etc.)
    - Create email templates for notifications
-   - Get Service ID, Template ID, and Public Key
+   - Copy Service ID → `EMAILJS_SERVICE_ID`
+   - Copy Template ID → `EMAILJS_TEMPLATE_ID`
+   - Copy Public Key → `EMAILJS_PUBLIC_KEY`
+   - Set sender email → `EMAIL_FROM`
 
 5. **LLM Backend**:
    - Set up Open WebUI with DeepSeek-R1 model
    - Ensure the API is accessible at your specified URL
+   - Set API URL → `LLM_API_URL`
    - No API key needed for self-hosted setup
 
 #### **Environment Variables Overview**
@@ -387,14 +394,14 @@ Then fill in your actual values. Here's what you need to set up:
 DATABASE_URL="postgresql://..."
 
 # NextAuth.js
-NEXTAUTH_SECRET="your-super-secret-key-min-32-chars"
+AUTH_SECRET="your-super-secret-key-min-32-chars"
 NEXTAUTH_URL="http://localhost:3000"
 
-# GitHub OAuth
-GITHUB_CLIENT_ID="your-github-oauth-client-id"
-GITHUB_CLIENT_SECRET="your-github-oauth-client-secret"
+# GitHub OAuth (NextAuth.js Provider)
+AUTH_GITHUB_ID="your-github-oauth-client-id"
+AUTH_GITHUB_SECRET="your-github-oauth-client-secret"
 
-# GitHub App
+# GitHub App (Repository Access)
 GITHUB_APP_ID="123456"
 GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
 GITHUB_WEBHOOK_SECRET="your-webhook-secret"
@@ -407,6 +414,11 @@ EMAIL_FROM="noreply@yourdomain.com"
 
 # LLM Backend (Self-hosted)
 LLM_API_URL="http://localhost:8080"
+
+# Development (Optional)
+NODE_ENV="development"
+SKIP_ENV_VALIDATION="false"
+DEBUG="clio:*"
 ```
 
 #### **Redis (Optional - Only for Production Job Queue)**
