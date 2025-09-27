@@ -3,7 +3,13 @@ import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 
 const APP_ID = Number(env.GITHUB_APP_ID);
-const PRIVATE_KEY = env.GITHUB_PRIVATE_KEY;
+const PRIVATE_KEY = env.GITHUB_PRIVATE_KEY.replace(/\\n/g, '\n');
+
+if (env.NODE_ENV === 'development') {
+	console.log('GitHub App ID:', APP_ID);
+	console.log('Private key starts with:', PRIVATE_KEY.substring(0, 50) + '...');
+	console.log('Private key ends with:', '...' + PRIVATE_KEY.substring(PRIVATE_KEY.length - 50));
+}
 
 const octokitApp = new Octokit({
 	authStrategy: createAppAuth,
