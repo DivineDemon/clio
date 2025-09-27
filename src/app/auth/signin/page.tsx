@@ -35,10 +35,10 @@ export default async function SignInPage() {
 						</Button>
 					</form>
 					<div className="text-center">
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							Having trouble? Try this direct link:{" "}
-							<a 
-								href="/api/auth/signin/github" 
+							<a
+								href="/api/auth/signin/github"
 								className="text-primary hover:underline"
 							>
 								Direct GitHub Sign-in
