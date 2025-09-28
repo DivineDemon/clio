@@ -47,13 +47,19 @@ export async function fetchInstallationDetails(
 	repo: string,
 ): Promise<GitHubInstallationDetails | null> {
 	try {
-		const octokit = await createInstallationOctokit(owner, repo);
-		if (!octokit) {
-			console.error(
-				`Failed to create Octokit for installation ${installationId}`,
+		// Get installation access token first
+		const { getInstallationToken } = await import("@/lib/github");
+		const token = await getInstallationToken(installationId);
+
+		if (!token) {
+			throw new Error(
+				`Failed to get access token for installation ${installationId}`,
 			);
-			return null;
 		}
+
+		// Create Octokit with installation token
+		const { Octokit } = await import("@octokit/rest");
+		const octokit = new Octokit({ auth: token });
 
 		const { data: installation } = await octokit.rest.apps.getInstallation({
 			installation_id: installationId,
@@ -170,13 +176,19 @@ export async function getInstallationRepositories(
 	repo: string,
 ): Promise<GitHubRepositoryDetails[]> {
 	try {
-		const octokit = await createInstallationOctokit(owner, repo);
-		if (!octokit) {
-			console.error(
-				`Failed to create Octokit for installation ${installationId}`,
+		// Get installation access token first
+		const { getInstallationToken } = await import("@/lib/github");
+		const token = await getInstallationToken(installationId);
+
+		if (!token) {
+			throw new Error(
+				`Failed to get access token for installation ${installationId}`,
 			);
-			return [];
 		}
+
+		// Create Octokit with installation token
+		const { Octokit } = await import("@octokit/rest");
+		const octokit = new Octokit({ auth: token });
 
 		const { data: repositories } =
 			await octokit.rest.apps.listReposAccessibleToInstallation({

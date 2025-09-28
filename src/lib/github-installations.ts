@@ -41,12 +41,18 @@ export async function findUserInstallation(
 	userId: string,
 ): Promise<GitHubInstallation | null> {
 	try {
+		console.log(`Finding GitHub installation for user ${userId}...`);
 		const installations = await getAppInstallations();
 
 		// For now, we'll return the first installation
 		// In a more sophisticated implementation, we'd match by user ID
 		// This would require additional GitHub API calls to get user details
-		return installations.length > 0 ? (installations[0] ?? null) : null;
+		const result = installations.length > 0 ? (installations[0] ?? null) : null;
+		console.log(
+			`Found installation for user ${userId}:`,
+			result ? { id: result.id, account: result.account.login } : null,
+		);
+		return result;
 	} catch (error) {
 		console.error("Failed to find user installation:", error);
 		return null;
