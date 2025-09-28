@@ -68,7 +68,6 @@ export class ReadmeGenerator {
 					options,
 				);
 			} catch (error) {
-				console.error(`Failed to process README job ${job.id}:`, error);
 				await updateReadmeJob(job.id, {
 					status: "FAILED",
 					errorMessage:
@@ -164,10 +163,7 @@ export class ReadmeGenerator {
 				completedAt: new Date(),
 				processingTime,
 			});
-
-			console.log(`README job ${jobId} completed in ${processingTime}ms`);
 		} catch (error) {
-			console.error(`README job ${jobId} failed:`, error);
 			await updateReadmeJob(jobId, {
 				status: "FAILED",
 				errorMessage: error instanceof Error ? error.message : "Unknown error",

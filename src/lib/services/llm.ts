@@ -144,14 +144,14 @@ export class LLMService {
 				finishReason: data.choices?.[0]?.finish_reason,
 			};
 		} catch (error) {
-			console.error("LLM generation error:", error);
-
 			if (error instanceof Error && error.name === "AbortError") {
 				throw new Error("LLM request timed out after 4 minutes");
 			}
 
 			throw new Error(
-				`Failed to generate content: ${error instanceof Error ? error.message : "Unknown error"}`,
+				`Failed to generate content: ${
+					error instanceof Error ? error.message : "Unknown error"
+				}`,
 			);
 		}
 	}
@@ -272,22 +272,6 @@ REQUIREMENTS:
 Generate the complete README.md content now:`;
 
 		return prompt;
-	}
-
-	/**
-	 * Test the LLM connection
-	 */
-	async testConnection(): Promise<boolean> {
-		try {
-			const response = await this.generateContent({
-				prompt: "Hello, please respond with 'Connection successful'",
-				maxTokens: 10,
-			});
-			return response.content.includes("Connection successful");
-		} catch (error) {
-			console.error("LLM connection test failed:", error);
-			return false;
-		}
 	}
 }
 

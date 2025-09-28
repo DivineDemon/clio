@@ -79,10 +79,6 @@ export async function fetchInstallationDetails(
 			suspendedByLogin: installation.suspended_by?.login || null,
 		};
 	} catch (error) {
-		console.error(
-			`Error fetching installation details for ${installationId}:`,
-			error,
-		);
 		return null;
 	}
 }
@@ -97,7 +93,6 @@ export async function fetchRepositoryDetails(
 	try {
 		const octokit = await createInstallationOctokit(owner, repo);
 		if (!octokit) {
-			console.error(`Failed to create Octokit for repository ${owner}/${repo}`);
 			return null;
 		}
 
@@ -126,10 +121,6 @@ export async function fetchRepositoryDetails(
 			githubUpdatedAt: new Date(repository.updated_at),
 		};
 	} catch (error) {
-		console.error(
-			`Error fetching repository details for ${owner}/${repo}:`,
-			error,
-		);
 		return null;
 	}
 }
@@ -148,10 +139,6 @@ export async function isRepositoryManaged(
 			installationId: installationId || undefined,
 		};
 	} catch (error) {
-		console.error(
-			`Error checking if repository ${owner}/${repo} is managed:`,
-			error,
-		);
 		return { isManaged: false };
 	}
 }
@@ -204,10 +191,6 @@ export async function getInstallationRepositories(
 			githubUpdatedAt: new Date(repo.updated_at || new Date()),
 		}));
 	} catch (error) {
-		console.error(
-			`Error fetching repositories for installation ${installationId}:`,
-			error,
-		);
 		return [];
 	}
 }
