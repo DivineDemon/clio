@@ -127,23 +127,35 @@ export const readmeRouter = createTRPCRouter({
 	 * Get active jobs (QUEUED or PROCESSING) for real-time updates
 	 */
 	getActiveJobs: protectedProcedure.query(async ({ ctx }) => {
-		const userId = ctx.session.user.id;
-		if (!userId) {
-			throw new Error("User not authenticated");
+		try {
+			console.log("getActiveJobs called with context:", {
+				session: ctx.session,
+				user: ctx.session?.user,
+			});
+
+			const userId = ctx.session.user.id;
+			if (!userId) {
+				throw new Error("User not authenticated");
+			}
+
+			console.log(`Fetching active jobs for user ${userId}...`);
+
+			const queuedJobs = await getReadmeJobsByUserId(
+				userId,
+				"QUEUED" as JobStatus,
+			);
+			const processingJobs = await getReadmeJobsByUserId(
+				userId,
+				"PROCESSING" as JobStatus,
+			);
+
+			const allJobs = [...queuedJobs, ...processingJobs];
+			console.log(`Active jobs for user ${userId}:`, allJobs);
+			return allJobs;
+		} catch (error) {
+			console.error("Error fetching active jobs:", error);
+			throw error;
 		}
-
-		const queuedJobs = await getReadmeJobsByUserId(
-			userId,
-			"QUEUED" as JobStatus,
-		);
-		const processingJobs = await getReadmeJobsByUserId(
-			userId,
-			"PROCESSING" as JobStatus,
-		);
-
-		const allJobs = [...queuedJobs, ...processingJobs];
-		console.log(`Active jobs for user ${userId}:`, allJobs);
-		return allJobs;
 	}),
 
 	/**

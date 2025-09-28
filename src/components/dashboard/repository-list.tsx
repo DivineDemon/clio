@@ -93,13 +93,19 @@ export default function RepositoryList() {
 	});
 
 	// Get active jobs for status tracking with auto-refresh
-	const { data: activeJobs } = api.readme.getActiveJobs.useQuery(undefined, {
+	const {
+		data: activeJobs,
+		error: activeJobsError,
+		isLoading: activeJobsLoading,
+	} = api.readme.getActiveJobs.useQuery(undefined, {
 		refetchInterval: 2000, // Refresh every 2 seconds
 		refetchIntervalInBackground: true,
 	});
 
 	// Debug active jobs
 	console.log("Active jobs:", activeJobs);
+	console.log("Active jobs error:", activeJobsError);
+	console.log("Active jobs loading:", activeJobsLoading);
 
 	// Generate README mutation
 	const generateReadme = api.readme.generate.useMutation({
