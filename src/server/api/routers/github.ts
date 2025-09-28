@@ -64,6 +64,8 @@ export const githubRouter = createTRPCRouter({
 				source: "database",
 				hasInstallation: true,
 				needsSync: repositories.length === 0, // Needs sync if no repositories
+				installationId: existingInstallations[0]?.installationId,
+				accountLogin: existingInstallations[0]?.accountLogin,
 			};
 		}
 
