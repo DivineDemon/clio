@@ -57,38 +57,22 @@ export async function getRepoInstallation(owner: string, repo: string) {
 
 export async function getInstallationToken(installationId: number) {
 	try {
-		console.log(`Getting installation token for ${installationId}...`);
-		console.log(`APP_ID: ${APP_ID}`);
-		console.log(`PRIVATE_KEY length: ${PRIVATE_KEY.length}`);
-		console.log(`PRIVATE_KEY starts with: ${PRIVATE_KEY.substring(0, 50)}...`);
-
 		const auth = createAppAuth({
 			appId: APP_ID,
 			privateKey: PRIVATE_KEY,
 		});
 
-		console.log("Created auth instance, requesting installation token...");
 		const installationAuth = await auth({
 			type: "installation",
 			installationId,
 		});
 
-		console.log(
-			`Successfully got installation token: ${installationAuth.token?.substring(
-				0,
-				20,
-			)}...`,
-		);
 		return installationAuth.token;
 	} catch (error) {
 		console.error(
 			`Failed to get installation token for ${installationId}:`,
 			error,
 		);
-		if (error instanceof Error) {
-			console.error(`Error message: ${error.message}`);
-			console.error(`Error stack: ${error.stack}`);
-		}
 		return null;
 	}
 }

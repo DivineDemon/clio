@@ -47,21 +47,10 @@ export async function fetchInstallationDetails(
 	repo: string,
 ): Promise<GitHubInstallationDetails | null> {
 	try {
-		// Get installation access token first
-		const { getInstallationToken } = await import("@/lib/github");
-		const token = await getInstallationToken(installationId);
+		// Use app authentication for getting installation details
+		const { octokitApp } = await import("@/lib/github");
 
-		if (!token) {
-			throw new Error(
-				`Failed to get access token for installation ${installationId}`,
-			);
-		}
-
-		// Create Octokit with installation token
-		const { Octokit } = await import("@octokit/rest");
-		const octokit = new Octokit({ auth: token });
-
-		const { data: installation } = await octokit.rest.apps.getInstallation({
+		const { data: installation } = await octokitApp.rest.apps.getInstallation({
 			installation_id: installationId,
 		});
 
