@@ -98,7 +98,7 @@ export const githubRouter = createTRPCRouter({
 
 					if (installationDetails) {
 						// Create installation in database
-						await createInstallation({
+						const createdInstallation = await createInstallation({
 							installationId: installationDetails.id,
 							accountId: installationDetails.accountId,
 							accountLogin: installationDetails.accountLogin,
@@ -138,7 +138,7 @@ export const githubRouter = createTRPCRouter({
 									githubCreatedAt: repo.githubCreatedAt,
 									githubUpdatedAt: repo.githubUpdatedAt,
 									userId: userId,
-									installationId: githubInstallation.id.toString(),
+									installationId: createdInstallation.id,
 								});
 								createdRepos++;
 							} catch (error) {
@@ -324,7 +324,7 @@ export const githubRouter = createTRPCRouter({
 							githubCreatedAt: repo.githubCreatedAt,
 							githubUpdatedAt: repo.githubUpdatedAt,
 							userId: userId,
-							installationId: input.installationId,
+							installationId: existingInstallation.id,
 						});
 						createdRepos++;
 					} catch (error) {
