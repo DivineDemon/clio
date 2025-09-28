@@ -13,7 +13,7 @@ import {
 	Search,
 	Star,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function RepositoryList() {
@@ -28,15 +28,6 @@ export default function RepositoryList() {
 		refetch: refetchInstallation,
 	} = api.github.checkUserInstallation.useQuery();
 
-	// Show success toast if auto-sync completed
-	React.useEffect(() => {
-		if (installationStatus?.source === "auto-synced") {
-			toast.success(
-				`Successfully synced ${installationStatus.repositoryCount} repositories from ${installationStatus.accountLogin}!`,
-			);
-		}
-	}, [installationStatus]);
-
 	// Get user's repositories
 	const {
 		data: repositories,
@@ -49,29 +40,20 @@ export default function RepositoryList() {
 	// Sync installation mutation
 	const syncInstallation = api.github.syncInstallation.useMutation({
 		onSuccess: (data) => {
-			toast.success("Repositories synced successfully!");
+			toast.success("Sync successful");
 			refetchInstallation();
 			refetchRepos();
 		},
 		onError: (error) => {
 			console.error("Sync failed:", error);
-			toast.error(`Sync failed: ${error.message}`);
+			alert(`Sync failed: ${error.message}`);
 		},
 	});
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
-		toast.loading("Refreshing repositories...", {
-			id: "refresh-repositories",
-		});
 		try {
 			await refetchRepos();
-			toast.dismiss("refresh-repositories");
-			toast.success("Repositories refreshed!");
-		} catch (error) {
-			console.error("Refresh error:", error);
-			toast.dismiss("refresh-repositories");
-			toast.error("Failed to refresh repositories");
 		} finally {
 			setIsRefreshing(false);
 		}
@@ -79,7 +61,7 @@ export default function RepositoryList() {
 
 	const handleSyncInstallation = async () => {
 		if (!installationStatus?.installationId) {
-			toast.error("No installation ID found");
+			alert("No installation ID found");
 			return;
 		}
 
@@ -88,18 +70,13 @@ export default function RepositoryList() {
 			installationStatus.installationId,
 		);
 		setIsSyncing(true);
-		toast.loading("Syncing repositories...", {
-			id: "sync-repositories",
-		});
 		try {
 			const result = await syncInstallation.mutateAsync({
 				installationId: installationStatus.installationId.toString(),
 			});
 			console.log("Sync completed successfully:", result);
-			toast.dismiss("sync-repositories");
 		} catch (error) {
 			console.error("Sync error:", error);
-			toast.dismiss("sync-repositories");
 		} finally {
 			setIsSyncing(false);
 		}
@@ -183,12 +160,14 @@ export default function RepositoryList() {
 					<div className="py-12 text-center">
 						<GitBranch className="mx-auto h-12 w-12 text-green-500" />
 						<h3 className="mt-4 font-semibold text-gray-900 text-lg dark:text-white">
-							GitHub App Detected!
+							{installationStatus.source === "github"
+								? "GitHub App Detected!"
+								: "Sync Required"}
 						</h3>
 						<p className="mt-2 text-gray-600 dark:text-gray-300">
-							We found your GitHub App installation for{" "}
-							<strong>{installationStatus.accountLogin}</strong>. Click below to
-							sync your repositories.
+							{installationStatus.source === "github"
+								? `We found your GitHub App installation for ${installationStatus.accountLogin}. Click below to sync your repositories.`
+								: "Your GitHub App is installed but repositories need to be synced. Click below to fetch your repositories."}
 						</p>
 						<div className="mt-6">
 							<Button
@@ -326,23 +305,10 @@ export default function RepositoryList() {
 										</div>
 									</div>
 									<div className="ml-4 flex space-x-2">
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() =>
-												toast.info("View Details feature coming soon!")
-											}
-										>
+										<Button size="sm" variant="outline">
 											View Details
 										</Button>
-										<Button
-											size="sm"
-											onClick={() =>
-												toast.info("Generate README feature coming soon!")
-											}
-										>
-											Generate README
-										</Button>
+										<Button size="sm">Generate README</Button>
 									</div>
 								</div>
 							</div>

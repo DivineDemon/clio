@@ -39,30 +39,13 @@ export async function getAppInstallations(): Promise<GitHubInstallation[]> {
 
 export async function findUserInstallation(
 	userId: string,
-	githubUsername?: string,
 ): Promise<GitHubInstallation | null> {
 	try {
 		const installations = await getAppInstallations();
 
-		// If we have the GitHub username, match by account login
-		if (githubUsername) {
-			const userInstallation = installations.find(
-				(installation) => installation.account.login === githubUsername,
-			);
-			if (userInstallation) {
-				console.log(
-					`Found installation for user ${githubUsername}:`,
-					userInstallation.id,
-				);
-				return userInstallation;
-			}
-		}
-
-		// Fallback: return the first installation if no username match
-		// This handles cases where the user might have multiple accounts
-		console.log(
-			`No specific installation found for ${githubUsername}, using first available`,
-		);
+		// For now, we'll return the first installation
+		// In a more sophisticated implementation, we'd match by user ID
+		// This would require additional GitHub API calls to get user details
 		return installations.length > 0 ? (installations[0] ?? null) : null;
 	} catch (error) {
 		console.error("Failed to find user installation:", error);
