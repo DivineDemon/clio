@@ -68,6 +68,22 @@ export async function createRepository(
 	});
 }
 
+export async function getRepositoryById(
+	id: string,
+): Promise<Repository | null> {
+	return await db.repository.findUnique({
+		where: { id },
+		include: {
+			user: true,
+			installation: true,
+			readmeJobs: {
+				orderBy: { createdAt: "desc" },
+				take: 5,
+			},
+		},
+	});
+}
+
 export async function getRepositoryByGithubId(
 	githubId: number,
 ): Promise<Repository | null> {

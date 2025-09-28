@@ -5,7 +5,7 @@ import {
 	getReadmeJobById,
 	getReadmeJobsByUserId,
 } from "@/lib/services/readme-job";
-import { getRepositoryByGithubId } from "@/lib/services/repository";
+import { getRepositoryById } from "@/lib/services/repository";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import type { JobStatus } from "@prisma/client";
 import { z } from "zod";
@@ -32,9 +32,7 @@ export const readmeRouter = createTRPCRouter({
 			const { repositoryId, ...options } = input;
 
 			// Get repository details
-			const repository = await getRepositoryByGithubId(
-				Number.parseInt(repositoryId),
-			);
+			const repository = await getRepositoryById(repositoryId);
 			if (!repository) {
 				throw new Error("Repository not found");
 			}
