@@ -5,7 +5,12 @@ import {
 	getRepositoryStructure,
 	getRepositoryTree,
 } from "@/lib/repository";
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { getRepositoriesByUserId } from "@/lib/services/repository";
+import {
+	createTRPCRouter,
+	protectedProcedure,
+	publicProcedure,
+} from "@/server/api/trpc";
 import { z } from "zod";
 
 export const githubRouter = createTRPCRouter({
@@ -26,6 +31,22 @@ export const githubRouter = createTRPCRouter({
 				repository: `${input.owner}/${input.repo}`,
 			};
 		}),
+	checkUserInstallation: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+		if (!userId) {
+			throw new Error("User ID not found in session");
+		}
+		// Check if user has any GitHub installations
+		const repositories = await getRepositoriesByUserId(userId);
+		const hasInstallation = repositories.length > 0;
+		const installationUrl = await getInstallationUrl("");
+
+		return {
+			installed: hasInstallation,
+			installationUrl,
+			repositoryCount: repositories.length,
+		};
+	}),
 	getRepositoryInfo: publicProcedure
 		.input(
 			z.object({
@@ -83,4 +104,11 @@ export const githubRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			return getInstallationUrl(input.owner);
 		}),
+	getUserRepositories: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+		if (!userId) {
+			throw new Error("User ID not found in session");
+		}
+		return await getRepositoriesByUserId(userId);
+	}),
 });

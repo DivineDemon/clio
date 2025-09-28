@@ -1,5 +1,6 @@
 import GithubLogoutButton from "@/components/auth/github-logout-button";
 import InstallGithubAppButton from "@/components/dashboard/install-github-app-button";
+import RepositoryList from "@/components/dashboard/repository-list";
 import { Button } from "@/components/ui/button";
 import {
 	AlertCircle,
@@ -134,41 +135,7 @@ export default function Dashboard({ user }: DashboardProps) {
 				</div>
 
 				{/* Repositories Section */}
-				<div className="rounded-lg bg-white shadow dark:bg-slate-800">
-					<div className="border-gray-200 border-b px-6 py-4 dark:border-gray-700">
-						<div className="flex items-center justify-between">
-							<h2 className="font-semibold text-gray-900 text-lg dark:text-white">
-								Your Repositories
-							</h2>
-							<div className="flex items-center space-x-2">
-								<Button variant="outline" size="sm">
-									<Search className="mr-2 h-4 w-4" />
-									Search
-								</Button>
-								<Button variant="outline" size="sm">
-									<Filter className="mr-2 h-4 w-4" />
-									Filter
-								</Button>
-							</div>
-						</div>
-					</div>
-
-					<div className="p-6">
-						<div className="py-12 text-center">
-							<GitBranch className="mx-auto h-12 w-12 text-gray-400" />
-							<h3 className="mt-4 font-semibold text-gray-900 text-lg dark:text-white">
-								No repositories found
-							</h3>
-							<p className="mt-2 text-gray-600 dark:text-gray-300">
-								Install the Clio GitHub App to access your repositories and
-								start generating READMEs.
-							</p>
-							<div className="mt-6">
-								<InstallGithubAppButton />
-							</div>
-						</div>
-					</div>
-				</div>
+				<RepositoryList />
 
 				{/* Recent Activity */}
 				<div className="mt-8 rounded-lg bg-white shadow dark:bg-slate-800">
