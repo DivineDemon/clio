@@ -16,7 +16,12 @@ model User {
   accounts      Account[]
   sessions      Session[]
   Authenticator Authenticator[]
- 
+  
+  // Clio-specific relations
+  repositories      Repository[]
+  readmeJobs        ReadmeJob[]
+  githubInstallations GitHubInstallation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -79,4 +84,132 @@ model Authenticator {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, credentialID])
+}
+
+// ===== CLIO-SPECIFIC MODELS =====
+
+model GitHubInstallation {
+  id                String   @id @default(cuid())
+  installationId    Int      @unique // GitHub's installation ID
+  accountId         Int      // GitHub account ID (user or org)
+  accountLogin      String   // GitHub username or org name
+  accountType       String   // "User" or "Organization"
+  targetType        String   // "User" or "Organization"
+  permissions       Json     // GitHub App permissions
+  events            String[] // Subscribed webhook events
+  suspendedAt       DateTime?
+  suspendedBy       Int?
+  suspendedByLogin  String?
+  
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repositories      Repository[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([installationId])
+  @@index([accountLogin])
+}
+
+model Repository {
+  id                String   @id @default(cuid())
+  githubId          Int      @unique // GitHub repository ID
+  name              String
+  fullName          String   // "owner/repo"
+  owner             String   // Repository owner
+  description       String?
+  isPrivate         Boolean
+  defaultBranch     String
+  language          String?
+  topics            String[] // Repository topics/tags
+  size              Int      // Repository size in KB
+  stargazersCount   Int
+  forksCount        Int
+  openIssuesCount   Int
+  watchersCount     Int
+  pushedAt          DateTime?
+  githubCreatedAt   DateTime
+  githubUpdatedAt   DateTime
+  
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  installationId    String
+  installation      GitHubInstallation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  readmeJobs        ReadmeJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fullName])
+  @@index([owner])
+  @@index([language])
+}
+
+model ReadmeJob {
+  id                String   @id @default(cuid())
+  status            JobStatus @default(PENDING)
+  progress          Int      @default(0) // 0-100
+  errorMessage      String?
+  
+  // Repository context
+  repositoryId      String
+  repository        Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  
+  // Generation settings
+  includeImages     Boolean  @default(true)
+  includeBadges     Boolean  @default(true)
+  includeToc        Boolean  @default(true)
+  style             String   @default("professional") // "professional", "casual", "minimal"
+  customPrompt      String?  // User's custom instructions
+  
+  // Processing metadata
+  startedAt         DateTime?
+  completedAt       DateTime?
+  processingTime    Int?     // Duration in seconds
+  
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions          ReadmeVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@index([repositoryId])
+}
+
+model ReadmeVersion {
+  id                String   @id @default(cuid())
+  content           String   // Generated README content
+  contentHash       String   // SHA-256 hash for change detection
+  wordCount         Int
+  characterCount    Int
+  
+  // Generation metadata
+  modelUsed         String?  // LLM model identifier
+  tokensUsed        Int?     // Token count for cost tracking
+  generationTime    Int?     // Generation time in seconds
+  
+  // Relations
+  jobId             String
+  job               ReadmeJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([contentHash])
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
