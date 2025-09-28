@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import type { Repository } from "@prisma/client";
+import type { GitHubInstallation, ReadmeJob, Repository } from "@prisma/client";
 
 export interface CreateRepositoryData {
 	githubId: number;
@@ -100,9 +100,12 @@ export async function getRepositoryByGithubId(
 	});
 }
 
-export async function getRepositoriesByUserId(
-	userId: string,
-): Promise<Repository[]> {
+export async function getRepositoriesByUserId(userId: string): Promise<
+	(Repository & {
+		installation: GitHubInstallation | null;
+		readmeJobs: ReadmeJob[];
+	})[]
+> {
 	return await db.repository.findMany({
 		where: { userId },
 		include: {

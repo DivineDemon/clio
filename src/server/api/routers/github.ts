@@ -42,11 +42,14 @@ export const githubRouter = createTRPCRouter({
 		const repositories = await getRepositoriesByUserId(userId);
 		if (repositories.length > 0) {
 			const installationUrl = await getInstallationUrl("");
+			// Get the installation ID from the first repository
+			const installationId = repositories[0]?.installation?.installationId;
 			return {
 				installed: true,
 				installationUrl,
 				repositoryCount: repositories.length,
 				source: "database",
+				installationId,
 			};
 		}
 
