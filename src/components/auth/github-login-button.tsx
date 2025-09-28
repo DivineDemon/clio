@@ -11,7 +11,7 @@ interface GithubLoginButtonProps {
 
 const GithubLoginButton = ({ className }: GithubLoginButtonProps) => {
 	return (
-		<Button type="button" onClick={login} className={cn("w-full", className)}>
+		<Button type="button" onClick={login} className={cn("w-auto", className)}>
 			Sign in with GitHub
 		</Button>
 	);

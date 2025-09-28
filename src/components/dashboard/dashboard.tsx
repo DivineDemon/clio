@@ -1,4 +1,5 @@
 import GithubLogoutButton from "@/components/auth/github-logout-button";
+import InstallGithubAppButton from "@/components/dashboard/install-github-app-button";
 import { Button } from "@/components/ui/button";
 import {
 	AlertCircle,
@@ -43,7 +44,9 @@ export default function Dashboard({ user }: DashboardProps) {
 									src={user.image || ""}
 									className="size-8 rounded-full"
 								/>
-								<span className="font-medium text-sm">{user.name}</span>
+								<span className="font-medium text-sm">
+									{user.name?.split(" ")[0] || "Developer"}
+								</span>
 							</div>
 							<GithubLogoutButton />
 						</div>
@@ -161,7 +164,7 @@ export default function Dashboard({ user }: DashboardProps) {
 								start generating READMEs.
 							</p>
 							<div className="mt-6">
-								<Button>Install GitHub App</Button>
+								<InstallGithubAppButton />
 							</div>
 						</div>
 					</div>

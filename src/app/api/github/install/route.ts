@@ -7,26 +7,26 @@ export async function GET(request: NextRequest) {
 		const owner = searchParams.get("owner");
 		const repo = searchParams.get("repo");
 
+		// If no owner/repo provided, redirect to general GitHub App installation
 		if (!owner || !repo) {
-			return NextResponse.json(
-				{ error: "Owner and repo parameters are required" },
-				{ status: 400 },
-			);
+			const installationUrl = await getInstallationUrl(""); // Get general installation URL
+			return NextResponse.redirect(installationUrl);
 		}
 
 		const installed = await isAppInstalled(owner, repo);
-		const installationUrl = getInstallationUrl(owner);
+		const installationUrl = await getInstallationUrl(owner);
 
-		return NextResponse.json({
-			installed,
-			installationUrl,
-			repository: `${owner}/${repo}`,
-		});
+		// If not installed, redirect to installation page
+		if (!installed) {
+			return NextResponse.redirect(installationUrl);
+		}
+
+		// If already installed, redirect back to dashboard
+		return NextResponse.redirect(new URL("/dashboard", request.url));
 	} catch (error) {
 		console.error("Error checking installation status:", error);
-		return NextResponse.json(
-			{ error: "Failed to check installation status" },
-			{ status: 500 },
+		return NextResponse.redirect(
+			new URL("/dashboard?error=installation-failed", request.url),
 		);
 	}
 }

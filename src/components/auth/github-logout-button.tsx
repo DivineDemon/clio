@@ -11,7 +11,7 @@ interface GithubLogoutButtonProps {
 
 const GithubLogoutButton = ({ className }: GithubLogoutButtonProps) => {
 	return (
-		<Button type="button" onClick={logout} className={cn("w-full", className)}>
+		<Button type="button" onClick={logout} className={cn("w-auto", className)}>
 			Logout
 		</Button>
 	);
