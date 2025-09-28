@@ -1,80 +1,56 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { env } from "@/env";
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 
 const APP_ID = Number(env.GITHUB_APP_ID);
-
 let PRIVATE_KEY: string;
+
 try {
-  // Log the raw private key for debugging (first 100 chars only)
-  console.log(
-    "Raw private key (first 100 chars):",
-    env.GITHUB_PRIVATE_KEY.substring(0, 100)
-  );
-  console.log(
-    "Raw private key contains \\n:",
-    env.GITHUB_PRIVATE_KEY.includes("\\n")
-  );
+	console.log("📁 Reading private key from file...");
+	const privateKeyPath = join(
+		process.cwd(),
+		"src",
+		"lib",
+		"github-private-key.pem",
+	);
+	PRIVATE_KEY = readFileSync(privateKeyPath, "utf8").trim();
+	console.log("✅ Private key loaded from file");
 
-  // Try multiple formatting approaches
-  let formattedKey = env.GITHUB_PRIVATE_KEY;
+	console.log("📁 Private key length:", PRIVATE_KEY.length);
+	console.log(
+		"📁 Private key starts with:",
+		`${PRIVATE_KEY.substring(0, 50)}...`,
+	);
+	console.log(
+		"📁 Private key ends with:",
+		`...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`,
+	);
 
-  // Approach 1: Replace literal \n with actual newlines
-  formattedKey = formattedKey.replace(/\\n/g, "\n");
+	// Validate the private key format
+	if (!PRIVATE_KEY.includes("-----BEGIN RSA PRIVATE KEY-----")) {
+		throw new Error("Invalid private key format - missing BEGIN header");
+	}
+	if (!PRIVATE_KEY.includes("-----END RSA PRIVATE KEY-----")) {
+		throw new Error("Invalid private key format - missing END header");
+	}
+	if (!PRIVATE_KEY.includes("\n")) {
+		throw new Error("Invalid private key format - no newlines found");
+	}
 
-  // Approach 2: If that didn't work, try replacing with actual line breaks
-  if (!formattedKey.includes("\n")) {
-    formattedKey = env.GITHUB_PRIVATE_KEY.replace(/\\\\n/g, "\n");
-  }
-
-  // Approach 3: If still no newlines, add them manually based on typical RSA key structure
-  if (!formattedKey.includes("\n")) {
-    // This is a fallback - manually format a typical RSA private key
-    const keyContent = env.GITHUB_PRIVATE_KEY.replace(
-      /-----BEGIN RSA PRIVATE KEY-----/,
-      ""
-    )
-      .replace(/-----END RSA PRIVATE KEY-----/, "")
-      .replace(/\s/g, "");
-
-    // Split into 64-character lines (typical RSA key format)
-    const lines = [];
-    for (let i = 0; i < keyContent.length; i += 64) {
-      lines.push(keyContent.substring(i, i + 64));
-    }
-
-    formattedKey = `-----BEGIN RSA PRIVATE KEY-----\n${lines.join(
-      "\n"
-    )}\n-----END RSA PRIVATE KEY-----`;
-  }
-
-  PRIVATE_KEY = formattedKey;
-
-  console.log(
-    "Formatted private key (first 100 chars):",
-    PRIVATE_KEY.substring(0, 100)
-  );
-  console.log(
-    "Formatted private key contains actual newlines:",
-    PRIVATE_KEY.includes("\n")
-  );
-
-  if (!PRIVATE_KEY.includes("BEGIN") || !PRIVATE_KEY.includes("END")) {
-    throw new Error("Invalid private key format - missing BEGIN/END markers");
-  }
+	console.log("✅ Private key format validation passed");
 } catch (error) {
-  console.error("Private key formatting error:", error);
-  throw new Error(
-    `Failed to format GitHub private key: ${
-      error instanceof Error ? error.message : "Unknown error"
-    }`
-  );
+	console.error("❌ Failed to load private key:", error);
+	throw new Error(
+		`Failed to load GitHub private key: ${
+			error instanceof Error ? error.message : "Unknown error"
+		}`,
+	);
 }
 
-// Test private key format more thoroughly
 function validatePrivateKey(key: string): boolean {
 	try {
-		// Check for proper headers
 		if (!key.includes("-----BEGIN RSA PRIVATE KEY-----")) {
 			console.error("❌ Missing BEGIN header");
 			return false;
@@ -83,29 +59,29 @@ function validatePrivateKey(key: string): boolean {
 			console.error("❌ Missing END header");
 			return false;
 		}
-		
-		// Check for proper line breaks
+
 		if (!key.includes("\n")) {
 			console.error("❌ No newlines found");
 			return false;
 		}
-		
-		// Check for minimum length (RSA keys are typically 1600+ chars)
+
 		if (key.length < 1600) {
 			console.error(`❌ Key too short: ${key.length} chars`);
 			return false;
 		}
-		
-		// Try to create a minimal test to validate the key format
+
 		try {
 			const testAuth = createAppAuth({
-				appId: 12345, // Dummy app ID for testing
+				appId: 12345,
 				privateKey: key,
 			});
 			console.log("✅ Private key format validation passed");
 			return true;
 		} catch (testError) {
-			console.error("❌ Private key format validation failed:", (testError as Error).message);
+			console.error(
+				"❌ Private key format validation failed:",
+				(testError as Error).message,
+			);
 			return false;
 		}
 	} catch (error) {
@@ -115,141 +91,123 @@ function validatePrivateKey(key: string): boolean {
 }
 
 if (env.NODE_ENV === "development") {
-  console.log("GitHub App ID:", APP_ID);
-  console.log("Private key starts with:", `${PRIVATE_KEY.substring(0, 50)}...`);
-  console.log(
-    "Private key ends with:",
-    `...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`
-  );
-  console.log(
-    "Private key validation:",
-    validatePrivateKey(PRIVATE_KEY) ? "✅ PASSED" : "❌ FAILED"
-  );
+	console.log("GitHub App ID:", APP_ID);
+	console.log("Private key starts with:", `${PRIVATE_KEY.substring(0, 50)}...`);
+	console.log(
+		"Private key ends with:",
+		`...${PRIVATE_KEY.substring(PRIVATE_KEY.length - 50)}`,
+	);
+	console.log(
+		"Private key validation:",
+		validatePrivateKey(PRIVATE_KEY) ? "✅ PASSED" : "❌ FAILED",
+	);
 }
 
-// Create Octokit instance with multiple fallback approaches
 let octokitApp: Octokit;
 let lastError: Error | null = null;
 
-// Approach 1: Try with the formatted key
 try {
-  console.log("Attempting to create Octokit with formatted key...");
-  octokitApp = new Octokit({
-    authStrategy: createAppAuth,
-    auth: {
-      appId: APP_ID,
-      privateKey: PRIVATE_KEY,
-    },
-  });
-  console.log("✅ Octokit created successfully with formatted key");
+	console.log("Attempting to create Octokit with formatted key...");
+	octokitApp = new Octokit({
+		authStrategy: createAppAuth,
+		auth: {
+			appId: APP_ID,
+			privateKey: PRIVATE_KEY,
+		},
+	});
+	console.log("✅ Octokit created successfully with formatted key");
 } catch (error) {
-  lastError = error as Error;
-  console.error("❌ Failed with formatted key:", lastError.message);
+	lastError = error as Error;
+	console.error("❌ Failed with formatted key:", lastError.message);
 
-  // Approach 2: Try with the raw key
-  try {
-    console.log("Attempting to create Octokit with raw key...");
-    octokitApp = new Octokit({
-      authStrategy: createAppAuth,
-      auth: {
-        appId: APP_ID,
-        privateKey: env.GITHUB_PRIVATE_KEY,
-      },
-    });
-    console.log("✅ Octokit created successfully with raw key");
-  } catch (error2) {
-    console.error("❌ Failed with raw key:", (error2 as Error).message);
+	try {
+		console.log("Attempting minimal Octokit creation...");
+		octokitApp = new Octokit({
+			authStrategy: createAppAuth,
+			auth: {
+				appId: APP_ID,
+				privateKey:
+					"-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
+			},
+		});
+		console.log("✅ Octokit created successfully with test key");
+	} catch (error2) {
+		console.error("❌ All approaches failed. Last error:", lastError.message);
+		console.error("Private key length:", PRIVATE_KEY.length);
+		console.error("App ID:", APP_ID);
+		console.error("File check:", {
+			privateKeyLength: PRIVATE_KEY?.length,
+			appId: env.GITHUB_APP_ID,
+		});
 
-    // Approach 3: Try with a minimal test
-    try {
-      console.log("Attempting minimal Octokit creation...");
-      octokitApp = new Octokit({
-        authStrategy: createAppAuth,
-        auth: {
-          appId: APP_ID,
-          privateKey:
-            "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
-        },
-      });
-      console.log("✅ Octokit created successfully with test key");
-    } catch (error3) {
-      console.error("❌ All approaches failed. Last error:", lastError.message);
-      console.error("Private key length:", PRIVATE_KEY.length);
-      console.error("App ID:", APP_ID);
-      console.error("Environment check:", {
-        hasPrivateKey: !!env.GITHUB_PRIVATE_KEY,
-        privateKeyLength: env.GITHUB_PRIVATE_KEY?.length,
-        appId: env.GITHUB_APP_ID,
-      });
-
-      throw new Error(
-        `Failed to initialize GitHub App after trying multiple approaches. Last error: ${
-          lastError?.message || "Unknown error"
-        }`
-      );
-    }
-  }
+		throw new Error(
+			`Failed to initialize GitHub App after trying multiple approaches. Last error: ${
+				lastError?.message || "Unknown error"
+			}`,
+		);
+	}
 }
 
 export async function getRepoInstallation(owner: string, repo: string) {
-  try {
-    console.log(`🔍 Attempting to get installation for ${owner}/${repo}...`);
-    console.log(`🔍 Using App ID: ${APP_ID}`);
-    console.log(`🔍 Private key length: ${PRIVATE_KEY.length}`);
+	try {
+		console.log(`🔍 Attempting to get installation for ${owner}/${repo}...`);
+		console.log(`🔍 Using App ID: ${APP_ID}`);
+		console.log(`🔍 Private key length: ${PRIVATE_KEY.length}`);
 
-    const { data } = await octokitApp.rest.apps.getRepoInstallation({
-      owner,
-      repo,
-    });
+		const { data } = await octokitApp.rest.apps.getRepoInstallation({
+			owner,
+			repo,
+		});
 
-    console.log(`✅ Successfully got installation ID: ${data.id}`);
-    return data.id;
-  } catch (error) {
-    console.error(`❌ Failed to get installation for ${owner}/${repo}:`, error);
-    console.error(`❌ Error details:`, {
-      message: (error as Error).message,
-      code: (error as any).code,
-      status: (error as any).status,
-    });
-    return null;
-  }
+		console.log(`✅ Successfully got installation ID: ${data.id}`);
+		return data.id;
+	} catch (error) {
+		console.error(`❌ Failed to get installation for ${owner}/${repo}:`, error);
+		console.error("❌ Error details:", {
+			message: (error as Error).message,
+			code: (error as Error & { code?: string }).code,
+			status: (error as Error & { status?: number }).status,
+		});
+		return null;
+	}
 }
 
 export async function getInstallationToken(installationId: number) {
-  try {
-    console.log(
-      `🔑 Attempting to get installation token for ID: ${installationId}`
-    );
-    console.log(`🔑 Using App ID: ${APP_ID}`);
-    console.log(`🔑 Private key preview: ${PRIVATE_KEY.substring(0, 50)}...`);
+	try {
+		console.log(
+			`🔑 Attempting to get installation token for ID: ${installationId}`,
+		);
+		console.log(`🔑 Using App ID: ${APP_ID}`);
+		console.log(`🔑 Private key preview: ${PRIVATE_KEY.substring(0, 50)}...`);
 
-    const auth = createAppAuth({
-      appId: APP_ID,
-      privateKey: PRIVATE_KEY,
-    });
+		const auth = createAppAuth({
+			appId: APP_ID,
+			privateKey: PRIVATE_KEY,
+		});
 
-    console.log(`🔑 Created auth instance, requesting installation token...`);
-    const installationAuth = await auth({
-      type: "installation",
-      installationId,
-    });
+		console.log("🔑 Created auth instance, requesting installation token...");
+		const installationAuth = await auth({
+			type: "installation",
+			installationId,
+		});
 
-    console.log(
-      `✅ Successfully got installation token (length: ${installationAuth.token?.length})`
-    );
-    return installationAuth.token;
-  } catch (error) {
-    console.error(
-      `❌ Failed to get installation token for ${installationId}:`,
-      error
-    );
-    console.error(`❌ Token generation error details:`, {
-      message: (error as Error).message,
-      code: (error as any).code,
-      opensslError: (error as any).opensslErrorStack,
-    });
-    return null;
-  }
+		console.log(
+			`✅ Successfully got installation token (length: ${installationAuth.token?.length})`,
+		);
+		return installationAuth.token;
+	} catch (error) {
+		console.error(
+			`❌ Failed to get installation token for ${installationId}:`,
+			error,
+		);
+		console.error("❌ Token generation error details:", {
+			message: (error as Error).message,
+			code: (error as Error & { code?: string }).code,
+			opensslError: (error as Error & { opensslErrorStack?: unknown })
+				.opensslErrorStack,
+		});
+		return null;
+	}
 }
 
 export async function createInstallationOctokit(owner: string, repo: string) {
