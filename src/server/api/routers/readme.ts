@@ -1,4 +1,4 @@
-import { getInstallationByInstallationId } from "@/lib/services/github-installation";
+import { getInstallationById } from "@/lib/services/github-installation";
 import { readmeGenerator } from "@/lib/services/readme-generator";
 import {
 	getLatestReadmeVersion,
@@ -42,10 +42,9 @@ export const readmeRouter = createTRPCRouter({
 				throw new Error("Unauthorized access to repository");
 			}
 
-			// Get installation details
-			const installation = await getInstallationByInstallationId(
-				Number.parseInt(repository.installationId),
-			);
+			// Get installation details using the installationId from the repository
+			// Note: repository.installationId is the database CUID
+			const installation = await getInstallationById(repository.installationId);
 			if (!installation) {
 				throw new Error("GitHub App installation not found");
 			}

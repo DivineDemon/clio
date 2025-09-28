@@ -40,6 +40,18 @@ export async function createInstallation(
 	});
 }
 
+export async function getInstallationById(
+	id: string,
+): Promise<GitHubInstallation | null> {
+	return await db.gitHubInstallation.findUnique({
+		where: { id },
+		include: {
+			user: true,
+			repositories: true,
+		},
+	});
+}
+
 export async function getInstallationByInstallationId(
 	installationId: number,
 ): Promise<GitHubInstallation | null> {
