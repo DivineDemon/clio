@@ -98,6 +98,9 @@ export default function RepositoryList() {
 		refetchIntervalInBackground: true,
 	});
 
+	// Debug active jobs
+	console.log("Active jobs:", activeJobs);
+
 	// Generate README mutation
 	const generateReadme = api.readme.generate.useMutation({
 		onSuccess: (data) => {
@@ -156,8 +159,10 @@ export default function RepositoryList() {
 
 	// Get job status for a repository
 	const getJobStatus = (repositoryId: string) => {
-		if (!activeJobs) return null;
-		return activeJobs.find((job) => job.repositoryId === repositoryId);
+		if (!activeJobs || activeJobs.length === 0) return null;
+		const job = activeJobs.find((job) => job.repositoryId === repositoryId);
+		console.log(`Job status for ${repositoryId}:`, job);
+		return job || null;
 	};
 
 	const filteredRepositories =

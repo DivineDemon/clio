@@ -141,7 +141,9 @@ export const readmeRouter = createTRPCRouter({
 			"PROCESSING" as JobStatus,
 		);
 
-		return [...queuedJobs, ...processingJobs];
+		const allJobs = [...queuedJobs, ...processingJobs];
+		console.log(`Active jobs for user ${userId}:`, allJobs);
+		return allJobs;
 	}),
 
 	/**
