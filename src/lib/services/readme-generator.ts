@@ -57,19 +57,24 @@ export class ReadmeGenerator {
 			progress: 0,
 		});
 
-		// Queue the job for background processing
-		// Note: In a real implementation, you'd use a job queue like Bull, Agenda, or similar
-		// For now, we'll process it immediately in a separate thread
-		setImmediate(() => {
-			this.processReadmeJob(job.id, repository, installationId, options).catch(
-				(error) => {
-					console.error(`Failed to process README job ${job.id}:`, error);
-					updateReadmeJob(job.id, {
-						status: "FAILED",
-						errorMessage: error.message,
-					}).catch(console.error);
-				},
-			);
+		// Process the job immediately but with a shorter timeout
+		// This will work better in serverless environments
+		Promise.resolve().then(async () => {
+			try {
+				await this.processReadmeJob(
+					job.id,
+					repository,
+					installationId,
+					options,
+				);
+			} catch (error) {
+				console.error(`Failed to process README job ${job.id}:`, error);
+				await updateReadmeJob(job.id, {
+					status: "FAILED",
+					errorMessage:
+						error instanceof Error ? error.message : "Unknown error",
+				});
+			}
 		});
 
 		return {
@@ -81,7 +86,7 @@ export class ReadmeGenerator {
 	/**
 	 * Process README job in background
 	 */
-	private async processReadmeJob(
+	async processReadmeJob(
 		jobId: string,
 		repository: Repository,
 		installationId: string,

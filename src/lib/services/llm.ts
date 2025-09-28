@@ -101,6 +101,10 @@ export class LLMService {
 		const model = request.model || this.defaultModel;
 
 		try {
+			// Create AbortController for timeout
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
+
 			const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
 				method: "POST",
 				headers: {
@@ -119,7 +123,10 @@ export class LLMService {
 					top_p: request.topP || 0.9,
 					stream: request.stream || false,
 				}),
+				signal: controller.signal,
 			});
+
+			clearTimeout(timeoutId);
 
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -138,6 +145,11 @@ export class LLMService {
 			};
 		} catch (error) {
 			console.error("LLM generation error:", error);
+
+			if (error instanceof Error && error.name === "AbortError") {
+				throw new Error("LLM request timed out after 4 minutes");
+			}
+
 			throw new Error(
 				`Failed to generate content: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
