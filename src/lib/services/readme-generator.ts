@@ -32,7 +32,147 @@ export interface ReadmeGenerationResult {
 
 export class ReadmeGenerator {
 	/**
-	 * Generate README for a repository
+	 * Queue README generation job (immediate return)
+	 */
+	async queueReadmeGeneration(
+		repository: Repository,
+		installationId: string,
+		userId: string,
+		options: ReadmeGenerationOptions = {},
+	): Promise<{ jobId: string; status: string }> {
+		// Create README job
+		const job = await createReadmeJob({
+			repositoryId: repository.id,
+			userId,
+			includeImages: options.includeImages ?? true,
+			includeBadges: options.includeBadges ?? true,
+			includeToc: options.includeToc ?? true,
+			style: options.style ?? "professional",
+			customPrompt: options.customPrompt,
+		});
+
+		// Update job status to queued
+		await updateReadmeJob(job.id, {
+			status: "QUEUED",
+			progress: 0,
+		});
+
+		// Queue the job for background processing
+		// Note: In a real implementation, you'd use a job queue like Bull, Agenda, or similar
+		// For now, we'll process it immediately in a separate thread
+		setImmediate(() => {
+			this.processReadmeJob(job.id, repository, installationId, options).catch(
+				(error) => {
+					console.error(`Failed to process README job ${job.id}:`, error);
+					updateReadmeJob(job.id, {
+						status: "FAILED",
+						errorMessage: error.message,
+					}).catch(console.error);
+				},
+			);
+		});
+
+		return {
+			jobId: job.id,
+			status: "QUEUED",
+		};
+	}
+
+	/**
+	 * Process README job in background
+	 */
+	private async processReadmeJob(
+		jobId: string,
+		repository: Repository,
+		installationId: string,
+		options: ReadmeGenerationOptions,
+	): Promise<void> {
+		const startTime = Date.now();
+
+		try {
+			// Update job status to processing
+			await updateReadmeJob(jobId, {
+				status: "PROCESSING",
+				progress: 10,
+				startedAt: new Date(),
+			});
+
+			// Analyze repository content
+			await updateReadmeJob(jobId, { progress: 30 });
+			const analysis = await contentAnalyzer.analyzeRepository(
+				repository,
+				installationId,
+			);
+
+			// Prepare repository data for LLM
+			await updateReadmeJob(jobId, { progress: 50 });
+			const repositoryData = {
+				name: repository.name,
+				description: repository.description,
+				language: repository.language,
+				topics: repository.topics,
+				structure: analysis.structure,
+				files: analysis.keyFiles,
+			};
+
+			// Generate README content using LLM
+			await updateReadmeJob(jobId, { progress: 70 });
+			const llmResponse = await llmService.generateReadme(repositoryData, {
+				style: options.style,
+				includeImages: options.includeImages,
+				includeBadges: options.includeBadges,
+				includeToc: options.includeToc,
+				customPrompt: options.customPrompt,
+				model: options.model,
+			});
+
+			// Process and clean the generated content
+			await updateReadmeJob(jobId, { progress: 85 });
+			const processedContent = this.processReadmeContent(
+				llmResponse.content,
+				analysis,
+			);
+
+			// Calculate content metrics
+			const wordCount = this.countWords(processedContent);
+			const characterCount = processedContent.length;
+			const contentHash = this.generateContentHash(processedContent);
+
+			// Create README version
+			await updateReadmeJob(jobId, { progress: 90 });
+			const version = await createReadmeVersion({
+				jobId,
+				content: processedContent,
+				contentHash,
+				wordCount,
+				characterCount,
+				modelUsed: llmResponse.model,
+				tokensUsed: llmResponse.tokensUsed,
+				generationTime: llmResponse.generationTime,
+			});
+
+			// Complete the job
+			const processingTime = Date.now() - startTime;
+			await updateReadmeJob(jobId, {
+				status: "COMPLETED",
+				progress: 100,
+				completedAt: new Date(),
+				processingTime,
+			});
+
+			console.log(`README job ${jobId} completed in ${processingTime}ms`);
+		} catch (error) {
+			console.error(`README job ${jobId} failed:`, error);
+			await updateReadmeJob(jobId, {
+				status: "FAILED",
+				errorMessage: error instanceof Error ? error.message : "Unknown error",
+				completedAt: new Date(),
+			});
+		}
+	}
+
+	/**
+	 * Generate README for a repository (synchronous - for testing)
 	 */
 	async generateReadme(
 		repository: Repository,

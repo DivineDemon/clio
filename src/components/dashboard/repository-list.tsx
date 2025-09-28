@@ -92,10 +92,16 @@ export default function RepositoryList() {
 		},
 	});
 
+	// Get active jobs for status tracking with auto-refresh
+	const { data: activeJobs } = api.readme.getActiveJobs.useQuery(undefined, {
+		refetchInterval: 2000, // Refresh every 2 seconds
+		refetchIntervalInBackground: true,
+	});
+
 	// Generate README mutation
 	const generateReadme = api.readme.generate.useMutation({
 		onSuccess: (data) => {
-			toast.success("README generation started!", {
+			toast.success("README generation queued!", {
 				description: `Job ID: ${data.jobId}`,
 			});
 		},
@@ -146,6 +152,12 @@ export default function RepositoryList() {
 		} catch (error) {
 			console.error("Generate README error:", error);
 		}
+	};
+
+	// Get job status for a repository
+	const getJobStatus = (repositoryId: string) => {
+		if (!activeJobs) return null;
+		return activeJobs.find((job) => job.repositoryId === repositoryId);
 	};
 
 	const filteredRepositories =
@@ -660,11 +672,27 @@ export default function RepositoryList() {
 										<Button
 											size="sm"
 											onClick={() => handleGenerateReadme(repo.id)}
-											disabled={generateReadme.isPending}
+											disabled={
+												generateReadme.isPending ||
+												getJobStatus(repo.id) !== null
+											}
 										>
-											{generateReadme.isPending
-												? "Generating..."
-												: "Generate README"}
+											{(() => {
+												const jobStatus = getJobStatus(repo.id);
+												if (jobStatus) {
+													switch (jobStatus.status) {
+														case "QUEUED":
+															return "Queued...";
+														case "PROCESSING":
+															return `Processing... ${jobStatus.progress}%`;
+														default:
+															return "Generate README";
+													}
+												}
+												return generateReadme.isPending
+													? "Starting..."
+													: "Generate README";
+											})()}
 										</Button>
 									</div>
 								</div>

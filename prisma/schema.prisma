@@ -211,6 +211,7 @@ model ReadmeVersion {
 
 enum JobStatus {
   PENDING
+  QUEUED
   PROCESSING
   COMPLETED
   FAILED

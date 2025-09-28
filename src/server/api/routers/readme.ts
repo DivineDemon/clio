@@ -49,8 +49,8 @@ export const readmeRouter = createTRPCRouter({
 				throw new Error("GitHub App installation not found");
 			}
 
-			// Generate README
-			const result = await readmeGenerator.generateReadme(
+			// Queue README generation (immediate return)
+			const result = await readmeGenerator.queueReadmeGeneration(
 				repository,
 				installation.installationId.toString(),
 				ctx.session.user.id,
@@ -58,9 +58,10 @@ export const readmeRouter = createTRPCRouter({
 			);
 
 			return {
-				jobId: result.job.id,
-				content: result.content,
-				metadata: result.metadata,
+				jobId: result.jobId,
+				status: result.status,
+				message:
+					"README generation queued successfully. Check job status for progress.",
 			};
 		}),
 
@@ -121,6 +122,27 @@ export const readmeRouter = createTRPCRouter({
 			const version = await getLatestReadmeVersion(input.jobId);
 			return version;
 		}),
+
+	/**
+	 * Get active jobs (QUEUED or PROCESSING) for real-time updates
+	 */
+	getActiveJobs: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+		if (!userId) {
+			throw new Error("User not authenticated");
+		}
+
+		const queuedJobs = await getReadmeJobsByUserId(
+			userId,
+			"QUEUED" as JobStatus,
+		);
+		const processingJobs = await getReadmeJobsByUserId(
+			userId,
+			"PROCESSING" as JobStatus,
+		);
+
+		return [...queuedJobs, ...processingJobs];
+	}),
 
 	/**
 	 * Test LLM connection
