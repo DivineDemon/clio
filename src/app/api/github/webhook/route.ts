@@ -18,8 +18,7 @@ export async function POST(request: NextRequest) {
 		const payload = JSON.parse(body);
 		const event = request.headers.get("x-github-event");
 
-		console.log(`Received GitHub webhook: ${event}`, payload);
-
+		// Process webhook event
 		switch (event) {
 			case "installation":
 				await handleInstallationEvent(payload);
@@ -31,7 +30,7 @@ export async function POST(request: NextRequest) {
 				await handleRepositoryEvent(payload);
 				break;
 			default:
-				console.log(`Unhandled webhook event: ${event}`);
+			// Unhandled webhook event
 		}
 
 		return NextResponse.json({ message: "Webhook processed successfully" });
@@ -56,24 +55,19 @@ interface InstallationEventPayload {
 
 async function handleInstallationEvent(payload: InstallationEventPayload) {
 	const { action, installation } = payload;
-	console.log(`Installation ${action}:`, installation);
 
 	switch (action) {
 		case "created":
 			// TODO: Store installation info in database
-			console.log("New installation created:", installation.id);
 			break;
 		case "deleted":
 			// TODO: Remove installation from database
-			console.log("Installation deleted:", installation.id);
 			break;
 		case "suspend":
 			// TODO: Mark installation as suspended
-			console.log("Installation suspended:", installation.id);
 			break;
 		case "unsuspend":
 			// TODO: Mark installation as active
-			console.log("Installation unsuspended:", installation.id);
 			break;
 	}
 }
@@ -100,11 +94,6 @@ async function handleInstallationRepositoriesEvent(
 ) {
 	const { action, installation, repositories_added, repositories_removed } =
 		payload;
-	console.log(`Installation repositories ${action}:`, {
-		installation: installation.id,
-		added: repositories_added?.length || 0,
-		removed: repositories_removed?.length || 0,
-	});
 
 	// TODO: Update repository access in database
 }
@@ -121,7 +110,6 @@ interface RepositoryEventPayload {
 
 async function handleRepositoryEvent(payload: RepositoryEventPayload) {
 	const { action, repository } = payload;
-	console.log(`Repository ${action}:`, repository);
 
 	switch (action) {
 		case "created":

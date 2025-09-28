@@ -6,25 +6,19 @@ export async function GET(request: NextRequest) {
 		const installationId = url.searchParams.get("installation_id");
 		const setupAction = url.searchParams.get("setup_action");
 
-		console.log("GitHub App setup:", {
-			installationId,
-			setupAction,
-			url: request.url,
-		});
-
+		// Handle different setup actions
 		switch (setupAction) {
 			case "install":
-				console.log(`GitHub App installed with ID: ${installationId}`);
+				// TODO: Store installation ID in database
 				break;
 			case "update":
-				console.log(`GitHub App updated with ID: ${installationId}`);
+				// TODO: Update installation details in database
 				break;
 			default:
-				console.log(`Unknown setup action: ${setupAction}`);
+				break;
 		}
 
-		// TODO: Store installation ID in database
-		// For now, just redirect to the main app
+		// Redirect to the main application dashboard
 		return NextResponse.redirect(new URL("/", request.url));
 	} catch (error) {
 		console.error("Setup endpoint error:", error);
