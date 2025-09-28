@@ -34,7 +34,7 @@ try {
 	);
 }
 
-const octokitApp = new Octokit({
+export const octokitApp = new Octokit({
 	authStrategy: createAppAuth,
 	auth: {
 		appId: APP_ID,

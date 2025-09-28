@@ -18,12 +18,16 @@ import { useState } from "react";
 export default function RepositoryList() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isRefreshing, setIsRefreshing] = useState(false);
+	const [isSyncing, setIsSyncing] = useState(false);
 
 	// Check if GitHub App is installed
-	const { data: installationStatus, isLoading: isCheckingInstallation } =
-		api.github.checkUserInstallation.useQuery();
+	const {
+		data: installationStatus,
+		isLoading: isCheckingInstallation,
+		refetch: refetchInstallation,
+	} = api.github.checkUserInstallation.useQuery();
 
-	// Get user's repositories (this will be implemented)
+	// Get user's repositories
 	const {
 		data: repositories,
 		isLoading: isLoadingRepos,
@@ -32,12 +36,40 @@ export default function RepositoryList() {
 		enabled: installationStatus?.installed ?? false,
 	});
 
+	// Sync installation mutation
+	const syncInstallation = api.github.syncInstallation.useMutation({
+		onSuccess: () => {
+			refetchInstallation();
+			refetchRepos();
+		},
+		onError: (error) => {
+			console.error("Sync failed:", error);
+			alert(`Sync failed: ${error.message}`);
+		},
+	});
+
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
 		try {
 			await refetchRepos();
 		} finally {
 			setIsRefreshing(false);
+		}
+	};
+
+	const handleSyncInstallation = async () => {
+		if (!installationStatus?.installationId) {
+			alert("No installation ID found");
+			return;
+		}
+
+		setIsSyncing(true);
+		try {
+			await syncInstallation.mutateAsync({
+				installationId: installationStatus.installationId.toString(),
+			});
+		} finally {
+			setIsSyncing(false);
 		}
 	};
 
@@ -98,6 +130,44 @@ export default function RepositoryList() {
 									Install GitHub App
 									<ExternalLink className="ml-2 h-4 w-4" />
 								</a>
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Show sync button if installation is detected but not synced
+	if (installationStatus?.needsSync) {
+		return (
+			<div className="rounded-lg bg-white shadow dark:bg-slate-800">
+				<div className="border-gray-200 border-b px-6 py-4 dark:border-gray-700">
+					<h2 className="font-semibold text-gray-900 text-lg dark:text-white">
+						Your Repositories
+					</h2>
+				</div>
+				<div className="p-6">
+					<div className="py-12 text-center">
+						<GitBranch className="mx-auto h-12 w-12 text-green-500" />
+						<h3 className="mt-4 font-semibold text-gray-900 text-lg dark:text-white">
+							GitHub App Detected!
+						</h3>
+						<p className="mt-2 text-gray-600 dark:text-gray-300">
+							We found your GitHub App installation for{" "}
+							<strong>{installationStatus.accountLogin}</strong>. Click below to
+							sync your repositories.
+						</p>
+						<div className="mt-6">
+							<Button
+								onClick={handleSyncInstallation}
+								disabled={isSyncing}
+								className="inline-flex items-center"
+							>
+								<RefreshCw
+									className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+								/>
+								{isSyncing ? "Syncing..." : "Sync Repositories"}
 							</Button>
 						</div>
 					</div>

@@ -1,4 +1,5 @@
 import { getInstallationUrl, isAppInstalled } from "@/lib/github";
+import { findUserInstallation } from "@/lib/github-installations";
 import {
 	getFileContent,
 	getRepositoryInfo,
@@ -36,15 +37,45 @@ export const githubRouter = createTRPCRouter({
 		if (!userId) {
 			throw new Error("User ID not found in session");
 		}
-		// Check if user has any GitHub installations
-		const repositories = await getRepositoriesByUserId(userId);
-		const hasInstallation = repositories.length > 0;
-		const installationUrl = await getInstallationUrl("");
 
+		// First check if we have repositories in our database
+		const repositories = await getRepositoriesByUserId(userId);
+		if (repositories.length > 0) {
+			const installationUrl = await getInstallationUrl("");
+			return {
+				installed: true,
+				installationUrl,
+				repositoryCount: repositories.length,
+				source: "database",
+			};
+		}
+
+		// If no repositories in database, check GitHub directly
+		try {
+			const githubInstallation = await findUserInstallation(userId);
+			if (githubInstallation) {
+				const installationUrl = await getInstallationUrl("");
+				return {
+					installed: true,
+					installationUrl,
+					repositoryCount: 0,
+					source: "github",
+					installationId: githubInstallation.id,
+					accountLogin: githubInstallation.account.login,
+					needsSync: true,
+				};
+			}
+		} catch (error) {
+			console.error("Failed to check GitHub installations:", error);
+		}
+
+		// No installation found
+		const installationUrl = await getInstallationUrl("");
 		return {
-			installed: hasInstallation,
+			installed: false,
 			installationUrl,
-			repositoryCount: repositories.length,
+			repositoryCount: 0,
+			source: "none",
 		};
 	}),
 	getRepositoryInfo: publicProcedure
@@ -111,4 +142,37 @@ export const githubRouter = createTRPCRouter({
 		}
 		return await getRepositoriesByUserId(userId);
 	}),
+	syncInstallation: protectedProcedure
+		.input(
+			z.object({
+				installationId: z.string(),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			const userId = ctx.session.user.id;
+			if (!userId) {
+				throw new Error("User ID not found in session");
+			}
+
+			// Call the sync API endpoint
+			const response = await fetch(
+				`${
+					process.env.NEXTAUTH_URL || "http://localhost:3000"
+				}/api/github/sync`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ installationId: input.installationId }),
+				},
+			);
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.error || "Failed to sync installation");
+			}
+
+			return await response.json();
+		}),
 });
