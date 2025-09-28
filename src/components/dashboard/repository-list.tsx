@@ -13,7 +13,8 @@ import {
 	Search,
 	Star,
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
+import { toast } from "sonner";
 
 export default function RepositoryList() {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -27,6 +28,15 @@ export default function RepositoryList() {
 		refetch: refetchInstallation,
 	} = api.github.checkUserInstallation.useQuery();
 
+	// Show success toast if auto-sync completed
+	React.useEffect(() => {
+		if (installationStatus?.source === "auto-synced") {
+			toast.success(
+				`Successfully synced ${installationStatus.repositoryCount} repositories from ${installationStatus.accountLogin}!`,
+			);
+		}
+	}, [installationStatus]);
+
 	// Get user's repositories
 	const {
 		data: repositories,
@@ -38,20 +48,30 @@ export default function RepositoryList() {
 
 	// Sync installation mutation
 	const syncInstallation = api.github.syncInstallation.useMutation({
-		onSuccess: () => {
+		onSuccess: (data) => {
+			toast.success("Repositories synced successfully!");
 			refetchInstallation();
 			refetchRepos();
 		},
 		onError: (error) => {
 			console.error("Sync failed:", error);
-			alert(`Sync failed: ${error.message}`);
+			toast.error(`Sync failed: ${error.message}`);
 		},
 	});
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
+		toast.loading("Refreshing repositories...", {
+			id: "refresh-repositories",
+		});
 		try {
 			await refetchRepos();
+			toast.dismiss("refresh-repositories");
+			toast.success("Repositories refreshed!");
+		} catch (error) {
+			console.error("Refresh error:", error);
+			toast.dismiss("refresh-repositories");
+			toast.error("Failed to refresh repositories");
 		} finally {
 			setIsRefreshing(false);
 		}
@@ -59,15 +79,27 @@ export default function RepositoryList() {
 
 	const handleSyncInstallation = async () => {
 		if (!installationStatus?.installationId) {
-			alert("No installation ID found");
+			toast.error("No installation ID found");
 			return;
 		}
 
+		console.log(
+			"Starting sync for installation ID:",
+			installationStatus.installationId,
+		);
 		setIsSyncing(true);
+		toast.loading("Syncing repositories...", {
+			id: "sync-repositories",
+		});
 		try {
-			await syncInstallation.mutateAsync({
+			const result = await syncInstallation.mutateAsync({
 				installationId: installationStatus.installationId.toString(),
 			});
+			console.log("Sync completed successfully:", result);
+			toast.dismiss("sync-repositories");
+		} catch (error) {
+			console.error("Sync error:", error);
+			toast.dismiss("sync-repositories");
 		} finally {
 			setIsSyncing(false);
 		}
@@ -294,10 +326,23 @@ export default function RepositoryList() {
 										</div>
 									</div>
 									<div className="ml-4 flex space-x-2">
-										<Button size="sm" variant="outline">
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() =>
+												toast.info("View Details feature coming soon!")
+											}
+										>
 											View Details
 										</Button>
-										<Button size="sm">Generate README</Button>
+										<Button
+											size="sm"
+											onClick={() =>
+												toast.info("Generate README feature coming soon!")
+											}
+										>
+											Generate README
+										</Button>
 									</div>
 								</div>
 							</div>

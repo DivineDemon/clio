@@ -16,13 +16,20 @@ const config: NextAuthConfig = {
 	],
 	adapter: PrismaAdapter(prisma),
 	callbacks: {
-		session: ({ session, user }) => ({
-			...session,
-			user: {
-				...session.user,
-				id: user.id,
-			},
-		}),
+		async jwt({ token, account, profile }) {
+			// Store GitHub username in token for later use
+			if (account?.provider === "github" && profile) {
+				token.githubUsername = profile.login;
+			}
+			return token;
+		},
+		async session({ session, token }) {
+			// Pass GitHub username to session
+			if (token.githubUsername) {
+				session.user.githubUsername = token.githubUsername as string;
+			}
+			return session;
+		},
 	},
 };
 
