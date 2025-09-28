@@ -1,8 +1,25 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/trpc/react";
 import {
+	Calendar,
 	Clock,
 	ExternalLink,
 	Eye,
@@ -12,6 +29,7 @@ import {
 	RefreshCw,
 	Search,
 	Star,
+	Tag,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +38,30 @@ export default function RepositoryList() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [isSyncing, setIsSyncing] = useState(false);
+	const [filters, setFilters] = useState({
+		language: "all",
+		privacy: "all",
+		sortBy: "name",
+	});
+	const [selectedRepo, setSelectedRepo] = useState<{
+		id: string;
+		name: string;
+		fullName: string;
+		owner: string;
+		description?: string | null;
+		isPrivate: boolean;
+		language?: string | null;
+		topics: string[];
+		stargazersCount: number;
+		forksCount: number;
+		watchersCount: number;
+		openIssuesCount: number;
+		size: number;
+		defaultBranch: string;
+		pushedAt?: Date | null;
+		githubCreatedAt: Date;
+		githubUpdatedAt: Date;
+	} | null>(null);
 
 	// Check if GitHub App is installed
 	const {
@@ -47,6 +89,20 @@ export default function RepositoryList() {
 		onError: (error) => {
 			console.error("Sync failed:", error);
 			alert(`Sync failed: ${error.message}`);
+		},
+	});
+
+	// Generate README mutation
+	const generateReadme = api.readme.generate.useMutation({
+		onSuccess: (data) => {
+			toast.success("README generation started!", {
+				description: `Job ID: ${data.jobId}`,
+			});
+		},
+		onError: (error) => {
+			toast.error("Failed to start README generation", {
+				description: error.message,
+			});
 		},
 	});
 
@@ -82,12 +138,58 @@ export default function RepositoryList() {
 		}
 	};
 
+	const handleGenerateReadme = async (repositoryId: string) => {
+		try {
+			await generateReadme.mutateAsync({
+				repositoryId,
+			});
+		} catch (error) {
+			console.error("Generate README error:", error);
+		}
+	};
+
 	const filteredRepositories =
-		repositories?.filter(
-			(repo) =>
-				repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				repo.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-		) ?? [];
+		repositories
+			?.filter((repo) => {
+				// Search filter
+				const matchesSearch =
+					repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+					repo.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+				// Language filter
+				const matchesLanguage =
+					filters.language === "all" || repo.language === filters.language;
+
+				// Privacy filter
+				const matchesPrivacy =
+					filters.privacy === "all" ||
+					(filters.privacy === "public" && !repo.isPrivate) ||
+					(filters.privacy === "private" && repo.isPrivate);
+
+				return matchesSearch && matchesLanguage && matchesPrivacy;
+			})
+			?.sort((a, b) => {
+				switch (filters.sortBy) {
+					case "name":
+						return a.name.localeCompare(b.name);
+					case "stars":
+						return b.stargazersCount - a.stargazersCount;
+					case "forks":
+						return b.forksCount - a.forksCount;
+					case "updated":
+						return (
+							new Date(b.githubUpdatedAt).getTime() -
+							new Date(a.githubUpdatedAt).getTime()
+						);
+					case "created":
+						return (
+							new Date(b.githubCreatedAt).getTime() -
+							new Date(a.githubCreatedAt).getTime()
+						);
+					default:
+						return 0;
+				}
+			}) ?? [];
 
 	if (isCheckingInstallation) {
 		return (
@@ -225,10 +327,109 @@ export default function RepositoryList() {
 							/>
 						</div>
 					</div>
-					<Button variant="outline" size="sm">
-						<Filter className="mr-2 h-4 w-4" />
-						Filter
-					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="sm">
+								<Filter className="mr-2 h-4 w-4" />
+								Filter
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-56">
+							<DropdownMenuLabel>Filter by Language</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuCheckboxItem
+								checked={filters.language === "all"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, language: "all" })
+								}
+							>
+								All Languages
+							</DropdownMenuCheckboxItem>
+							{Array.from(
+								new Set(
+									repositories?.map((repo) => repo.language).filter(Boolean),
+								),
+							).map((language) => (
+								<DropdownMenuCheckboxItem
+									key={language}
+									checked={filters.language === language}
+									onCheckedChange={() =>
+										setFilters({ ...filters, language: language || "all" })
+									}
+								>
+									{language}
+								</DropdownMenuCheckboxItem>
+							))}
+							<DropdownMenuSeparator />
+							<DropdownMenuLabel>Filter by Privacy</DropdownMenuLabel>
+							<DropdownMenuCheckboxItem
+								checked={filters.privacy === "all"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, privacy: "all" })
+								}
+							>
+								All Repositories
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={filters.privacy === "public"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, privacy: "public" })
+								}
+							>
+								Public Only
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={filters.privacy === "private"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, privacy: "private" })
+								}
+							>
+								Private Only
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuLabel>Sort by</DropdownMenuLabel>
+							<DropdownMenuCheckboxItem
+								checked={filters.sortBy === "name"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, sortBy: "name" })
+								}
+							>
+								Name
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={filters.sortBy === "stars"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, sortBy: "stars" })
+								}
+							>
+								Stars
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={filters.sortBy === "forks"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, sortBy: "forks" })
+								}
+							>
+								Forks
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={filters.sortBy === "updated"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, sortBy: "updated" })
+								}
+							>
+								Last Updated
+							</DropdownMenuCheckboxItem>
+							<DropdownMenuCheckboxItem
+								checked={filters.sortBy === "created"}
+								onCheckedChange={() =>
+									setFilters({ ...filters, sortBy: "created" })
+								}
+							>
+								Date Created
+							</DropdownMenuCheckboxItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 
 				{/* Repository List */}
@@ -305,10 +506,166 @@ export default function RepositoryList() {
 										</div>
 									</div>
 									<div className="ml-4 flex space-x-2">
-										<Button size="sm" variant="outline">
-											View Details
+										<Dialog>
+											<DialogTrigger asChild>
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={() => setSelectedRepo(repo)}
+												>
+													View Details
+												</Button>
+											</DialogTrigger>
+											<DialogContent className="max-w-2xl">
+												<DialogHeader>
+													<DialogTitle className="flex items-center space-x-2">
+														<GitBranch className="h-5 w-5" />
+														<span>{repo.name}</span>
+														{repo.isPrivate ? (
+															<span className="rounded-full bg-red-100 px-2 py-1 text-red-800 text-xs dark:bg-red-900 dark:text-red-300">
+																Private
+															</span>
+														) : (
+															<span className="rounded-full bg-green-100 px-2 py-1 text-green-800 text-xs dark:bg-green-900 dark:text-green-300">
+																Public
+															</span>
+														)}
+													</DialogTitle>
+													<DialogDescription>
+														{repo.fullName} • {repo.owner}
+													</DialogDescription>
+												</DialogHeader>
+												<div className="space-y-4">
+													{repo.description && (
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Description
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{repo.description}
+															</p>
+														</div>
+													)}
+
+													<div className="grid grid-cols-2 gap-4">
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Language
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{repo.language || "Not specified"}
+															</p>
+														</div>
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Default Branch
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{repo.defaultBranch}
+															</p>
+														</div>
+													</div>
+
+													<div className="grid grid-cols-2 gap-4">
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Size
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{Math.round(repo.size / 1024)} MB
+															</p>
+														</div>
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Open Issues
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{repo.openIssuesCount}
+															</p>
+														</div>
+													</div>
+
+													<div className="grid grid-cols-2 gap-4">
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Created
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{new Date(
+																	repo.githubCreatedAt,
+																).toLocaleDateString()}
+															</p>
+														</div>
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Last Updated
+															</h4>
+															<p className="text-gray-600 text-sm dark:text-gray-300">
+																{new Date(
+																	repo.githubUpdatedAt,
+																).toLocaleDateString()}
+															</p>
+														</div>
+													</div>
+
+													{repo.topics && repo.topics.length > 0 && (
+														<div>
+															<h4 className="font-medium text-gray-900 text-sm dark:text-white">
+																Topics
+															</h4>
+															<div className="mt-2 flex flex-wrap gap-2">
+																{repo.topics.map((topic: string) => (
+																	<span
+																		key={topic}
+																		className="rounded-full bg-blue-100 px-2 py-1 text-blue-800 text-xs dark:bg-blue-900 dark:text-blue-300"
+																	>
+																		{topic}
+																	</span>
+																))}
+															</div>
+														</div>
+													)}
+
+													<div className="flex items-center justify-between pt-4">
+														<div className="flex items-center space-x-6 text-gray-500 text-sm dark:text-gray-400">
+															<span className="flex items-center">
+																<Star className="mr-1 h-4 w-4" />
+																{repo.stargazersCount} stars
+															</span>
+															<span className="flex items-center">
+																<GitFork className="mr-1 h-4 w-4" />
+																{repo.forksCount} forks
+															</span>
+															<span className="flex items-center">
+																<Eye className="mr-1 h-4 w-4" />
+																{repo.watchersCount} watchers
+															</span>
+														</div>
+														<Button
+															size="sm"
+															onClick={() => {
+																window.open(
+																	`https://github.com/${repo.fullName}`,
+																	"_blank",
+																);
+															}}
+														>
+															<ExternalLink className="mr-2 h-4 w-4" />
+															View on GitHub
+														</Button>
+													</div>
+												</div>
+											</DialogContent>
+										</Dialog>
+										<Button
+											size="sm"
+											onClick={() => handleGenerateReadme(repo.id)}
+											disabled={generateReadme.isPending}
+										>
+											{generateReadme.isPending
+												? "Generating..."
+												: "Generate README"}
 										</Button>
-										<Button size="sm">Generate README</Button>
 									</div>
 								</div>
 							</div>
