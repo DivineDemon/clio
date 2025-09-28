@@ -19,15 +19,3 @@ export interface GitHubFileContent {
 	sha?: string;
 	url?: string;
 }
-
-export interface GitHubModel {
-	id: string;
-	object: string;
-	created: number;
-	owned_by: string;
-}
-
-export interface GitHubModelsResponse {
-	object: string;
-	data: GitHubModel[];
-}

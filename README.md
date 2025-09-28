@@ -19,8 +19,8 @@ Clio is a web service that reads any GitHub repository (public, private, or orga
 - **Database**: Prisma + Neon PostgreSQL
 - **Authentication**: NextAuth.js with GitHub OAuth
 - **GitHub Integration**: GitHub App + Octokit
-- **LLM Backend**: Open WebUI serving DeepSeek-R1
-- **Email**: SendGrid/SES/Mailgun for notifications
+- **LLM Backend**: Google Gemini 2.5 (Flash & Pro) via Vercel AI SDK
+- **Email**: EmailJS for notifications
 
 ## 📄 Application Pages & Structure
 
@@ -382,11 +382,10 @@ Then fill in your actual values. Here's what you need to set up:
    - Copy Public Key → `EMAILJS_PUBLIC_KEY`
    - Set sender email → `EMAIL_FROM`
 
-5. **LLM Backend**:
-   - Set up Open WebUI with DeepSeek-R1 model
-   - Ensure the API is accessible at your specified URL
-   - Set API URL → `LLM_API_URL`
-   - No API key needed for self-hosted setup
+5. **Google Gemini API**:
+   - Get API key from [Google AI Studio](https://aistudio.google.com/)
+   - Set API key → `GEMINI_API_KEY`
+   - Choose model → `GEMINI_MODEL` (default: gemini-2.5-flash)
 
 #### **Environment Variables Overview**
 ```bash
@@ -412,8 +411,9 @@ EMAILJS_TEMPLATE_ID="your-template-id"
 EMAILJS_PUBLIC_KEY="your-public-key"
 EMAIL_FROM="noreply@yourdomain.com"
 
-# LLM Backend (Self-hosted)
-LLM_API_URL="http://localhost:8080"
+# Google Gemini API
+GEMINI_API_KEY="your-gemini-api-key"
+GEMINI_MODEL="gemini-2.5-flash"
 
 # Development (Optional)
 NODE_ENV="development"

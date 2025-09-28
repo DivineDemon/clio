@@ -1,5 +1,7 @@
 import { env } from "@/env";
-import type { GitHubModel, GitHubModelsResponse } from "@/lib/types/octokit";
+import { google } from "@ai-sdk/google";
+import { generateObject, generateText } from "ai";
+import type { z } from "zod";
 import type { FileStructure, KeyFile } from "./content-analyzer";
 
 export interface LLMModel {
@@ -27,127 +29,66 @@ export interface LLMRequest {
 	stream?: boolean;
 }
 
-// Available models from your Open WebUI setup
+// Available Gemini models
 export const AVAILABLE_MODELS: LLMModel[] = [
 	{
-		id: "deepseek-r1:14b",
-		name: "DeepSeek R1 14B",
-		description: "Advanced reasoning model with 14B parameters",
-		maxTokens: 4096,
-		contextWindow: 128000,
+		id: "gemini-2.5-flash",
+		name: "Gemini 2.5 Flash",
+		description: "Fast and efficient model for quick responses",
+		maxTokens: 8192,
+		contextWindow: 1000000, // 1M tokens
 	},
 	{
-		id: "gpt-oss:latest",
-		name: "GPT OSS Latest",
-		description: "Open source GPT alternative",
-		maxTokens: 4096,
-		contextWindow: 128000,
-	},
-	{
-		id: "llama3.2:1b",
-		name: "Llama 3.2 1B",
-		description: "Lightweight Llama model for fast generation",
-		maxTokens: 2048,
-		contextWindow: 128000,
+		id: "gemini-2.5-pro",
+		name: "Gemini 2.5 Pro",
+		description: "Advanced model for complex reasoning and analysis",
+		maxTokens: 8192,
+		contextWindow: 1000000, // 1M tokens
 	},
 ];
 
 export class LLMService {
-	private baseUrl: string;
+	private apiKey: string;
 	private defaultModel: string;
 
 	constructor() {
-		this.baseUrl = env.LLM_API_URL;
-		this.defaultModel = "deepseek-r1:14b"; // Default to the most capable model
+		this.apiKey = env.GEMINI_API_KEY;
+		this.defaultModel = env.GEMINI_MODEL;
+
+		// Set the API key for the Google provider
+		process.env.GOOGLE_GENERATIVE_AI_API_KEY = this.apiKey;
 	}
 
 	/**
-	 * Get available models from the LLM service
+	 * Get available models
 	 */
 	async getAvailableModels(): Promise<LLMModel[]> {
-		try {
-			const response = await fetch(`${this.baseUrl}/v1/models`, {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
-
-			if (!response.ok) {
-				console.warn("Failed to fetch models from LLM service, using defaults");
-				return AVAILABLE_MODELS;
-			}
-
-			const data = (await response.json()) as GitHubModelsResponse;
-			// Transform the response to match our interface
-			return (
-				data.data?.map((model: GitHubModel) => ({
-					id: model.id,
-					name: model.id,
-					description: model.id,
-				})) || AVAILABLE_MODELS
-			);
-		} catch (error) {
-			console.warn("Error fetching models, using defaults:", error);
-			return AVAILABLE_MODELS;
-		}
+		return AVAILABLE_MODELS;
 	}
 
 	/**
-	 * Generate content using the LLM
+	 * Generate content using Gemini
 	 */
 	async generateContent(request: LLMRequest): Promise<LLMResponse> {
 		const startTime = Date.now();
 		const model = request.model || this.defaultModel;
 
 		try {
-			// Create AbortController for timeout
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutes timeout
-
-			const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					model,
-					messages: [
-						{
-							role: "user",
-							content: request.prompt,
-						},
-					],
-					max_tokens: request.maxTokens || 4096,
-					temperature: request.temperature || 0.7,
-					top_p: request.topP || 0.9,
-					stream: request.stream || false,
-				}),
-				signal: controller.signal,
+			const result = await generateText({
+				model: google(model),
+				prompt: request.prompt,
 			});
 
-			clearTimeout(timeoutId);
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`LLM API error: ${response.status} - ${errorText}`);
-			}
-
-			const data = await response.json();
 			const generationTime = Date.now() - startTime;
 
 			return {
-				content: data.choices?.[0]?.message?.content || "",
-				model: data.model || model,
-				tokensUsed: data.usage?.total_tokens,
+				content: result.text,
+				model: model,
+				tokensUsed: result.usage?.totalTokens,
 				generationTime,
-				finishReason: data.choices?.[0]?.finish_reason,
+				finishReason: result.finishReason,
 			};
 		} catch (error) {
-			if (error instanceof Error && error.name === "AbortError") {
-				throw new Error("LLM request timed out after 4 minutes");
-			}
-
 			throw new Error(
 				`Failed to generate content: ${
 					error instanceof Error ? error.message : "Unknown error"
@@ -198,9 +139,40 @@ export class LLMService {
 		return await this.generateContent({
 			prompt,
 			model,
-			maxTokens: 4096,
+			maxTokens: 8192, // Increased for Gemini's larger context
 			temperature: 0.7,
 		});
+	}
+
+	/**
+	 * Generate structured content using generateObject (for future use)
+	 */
+	async generateStructuredContent<T>(
+		prompt: string,
+		schema: z.ZodType<T>,
+		options: {
+			model?: string;
+			temperature?: number;
+		} = {},
+	): Promise<T> {
+		const { model = this.defaultModel, temperature = 0.7 } = options;
+
+		try {
+			const result = await generateObject({
+				model: google(model),
+				prompt,
+				schema,
+				temperature,
+			});
+
+			return result.object;
+		} catch (error) {
+			throw new Error(
+				`Failed to generate structured content: ${
+					error instanceof Error ? error.message : "Unknown error"
+				}`,
+			);
+		}
 	}
 
 	/**

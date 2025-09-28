@@ -14,7 +14,8 @@ export const env = createEnv({
 		EMAILJS_TEMPLATE_ID: z.string().min(1),
 		EMAILJS_PUBLIC_KEY: z.string().min(1),
 		EMAIL_FROM: z.string().email(),
-		LLM_API_URL: z.string().url(),
+		GEMINI_API_KEY: z.string().min(1),
+		GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
@@ -34,7 +35,8 @@ export const env = createEnv({
 		EMAILJS_TEMPLATE_ID: process.env.EMAILJS_TEMPLATE_ID,
 		EMAILJS_PUBLIC_KEY: process.env.EMAILJS_PUBLIC_KEY,
 		EMAIL_FROM: process.env.EMAIL_FROM,
-		LLM_API_URL: process.env.LLM_API_URL,
+		GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+		GEMINI_MODEL: process.env.GEMINI_MODEL,
 		NODE_ENV: process.env.NODE_ENV,
 		SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION === "true",
 		DEBUG: process.env.DEBUG,

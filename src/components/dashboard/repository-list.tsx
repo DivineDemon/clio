@@ -79,7 +79,7 @@ export default function RepositoryList() {
 		includeBadges: true,
 		includeToc: true,
 		customPrompt: "",
-		model: "deepseek-r1:14b",
+		model: "gemini-2.5-flash",
 	});
 	const [isReadmeDialogOpen, setIsReadmeDialogOpen] = useState(false);
 	const [selectedRepoForReadme, setSelectedRepoForReadme] = useState<
@@ -792,12 +792,11 @@ export default function RepositoryList() {
 									<SelectValue placeholder="Select a model" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="deepseek-r1:14b">
-										DeepSeek R1 14B (Recommended)
+									<SelectItem value="gemini-2.5-flash">
+										Gemini 2.5 Flash (Fast & Efficient)
 									</SelectItem>
-									<SelectItem value="gpt-oss:latest">GPT OSS Latest</SelectItem>
-									<SelectItem value="llama3.2:1b">
-										Llama 3.2 1B (Fast)
+									<SelectItem value="gemini-2.5-pro">
+										Gemini 2.5 Pro (Advanced Reasoning)
 									</SelectItem>
 								</SelectContent>
 							</Select>
