@@ -23,12 +23,30 @@ const config: NextAuthConfig = {
 			}
 			return token;
 		},
-		async session({ session, token }) {
-			// Pass GitHub username to session
-			if (token.githubUsername) {
-				session.user.githubUsername = token.githubUsername as string;
-			}
-			return session;
+		async session({ session, token, user }) {
+			// Pass user ID and GitHub username to session
+			console.log(
+				"Session callback - user:",
+				user?.id,
+				"token:",
+				token.sub,
+				"githubUsername:",
+				token.githubUsername,
+			);
+			return {
+				...session,
+				user: {
+					...session.user,
+					id: user?.id || token.sub || "",
+					githubUsername: token.githubUsername as string,
+				},
+			};
+		},
+		async redirect({ url, baseUrl }) {
+			// Redirect to dashboard after successful login
+			if (url.startsWith("/")) return `${baseUrl}${url}`;
+			if (new URL(url).origin === baseUrl) return url;
+			return `${baseUrl}/dashboard`;
 		},
 	},
 };

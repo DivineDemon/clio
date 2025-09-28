@@ -12,18 +12,8 @@ interface GithubLoginButtonProps {
 
 const GithubLoginButton = ({ className }: GithubLoginButtonProps) => {
 	const handleLogin = async () => {
-		try {
-			toast.loading("Signing in with GitHub...", {
-				id: "github-login",
-			});
-			await login();
-			toast.dismiss("github-login");
-			toast.success("Successfully signed in!");
-		} catch (error) {
-			toast.dismiss("github-login");
-			toast.error("Failed to sign in. Please try again.");
-			console.error("Login error:", error);
-		}
+		// The login function will handle the redirect automatically
+		await login();
 	};
 
 	return (
