@@ -17,6 +17,17 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/trpc/react";
 import {
 	Calendar,
@@ -62,6 +73,18 @@ export default function RepositoryList() {
 		githubCreatedAt: Date;
 		githubUpdatedAt: Date;
 	} | null>(null);
+	const [readmeSettings, setReadmeSettings] = useState({
+		style: "professional" as "professional" | "casual" | "minimal" | "detailed",
+		includeImages: true,
+		includeBadges: true,
+		includeToc: true,
+		customPrompt: "",
+		model: "deepseek-r1:14b",
+	});
+	const [isReadmeDialogOpen, setIsReadmeDialogOpen] = useState(false);
+	const [selectedRepoForReadme, setSelectedRepoForReadme] = useState<
+		string | null
+	>(null);
 
 	// Check if GitHub App is installed
 	const {
@@ -153,11 +176,21 @@ export default function RepositoryList() {
 		}
 	};
 
-	const handleGenerateReadme = async (repositoryId: string) => {
+	const handleGenerateReadme = (repositoryId: string) => {
+		setSelectedRepoForReadme(repositoryId);
+		setIsReadmeDialogOpen(true);
+	};
+
+	const handleConfirmGenerateReadme = async () => {
+		if (!selectedRepoForReadme) return;
+
 		try {
 			await generateReadme.mutateAsync({
-				repositoryId,
+				repositoryId: selectedRepoForReadme,
+				...readmeSettings,
 			});
+			setIsReadmeDialogOpen(false);
+			setSelectedRepoForReadme(null);
 		} catch (error) {
 			console.error("Generate README error:", error);
 		}
@@ -712,6 +745,172 @@ export default function RepositoryList() {
 					</div>
 				)}
 			</div>
+
+			{/* README Generation Settings Dialog */}
+			<Dialog open={isReadmeDialogOpen} onOpenChange={setIsReadmeDialogOpen}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>README Generation Settings</DialogTitle>
+						<DialogDescription>
+							Configure how your README should be generated for this repository.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-6">
+						{/* Style Selection */}
+						<div className="space-y-2">
+							<Label htmlFor="style">Writing Style</Label>
+							<Select
+								value={readmeSettings.style}
+								onValueChange={(value) =>
+									setReadmeSettings((prev) => ({
+										...prev,
+										style: value as
+											| "professional"
+											| "casual"
+											| "minimal"
+											| "detailed",
+									}))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select a style" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="professional">Professional</SelectItem>
+									<SelectItem value="casual">Casual</SelectItem>
+									<SelectItem value="minimal">Minimal</SelectItem>
+									<SelectItem value="detailed">Detailed</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* Model Selection */}
+						<div className="space-y-2">
+							<Label htmlFor="model">AI Model</Label>
+							<Select
+								value={readmeSettings.model}
+								onValueChange={(value) =>
+									setReadmeSettings((prev) => ({ ...prev, model: value }))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select a model" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="deepseek-r1:14b">
+										DeepSeek R1 14B (Recommended)
+									</SelectItem>
+									<SelectItem value="gpt-oss:latest">GPT OSS Latest</SelectItem>
+									<SelectItem value="llama3.2:1b">
+										Llama 3.2 1B (Fast)
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* Feature Toggles */}
+						<div className="space-y-4">
+							<Label>Include Features</Label>
+							<div className="space-y-3">
+								<div className="flex items-center justify-between">
+									<div className="space-y-0.5">
+										<Label htmlFor="include-images">Images & Screenshots</Label>
+										<p className="text-muted-foreground text-sm">
+											Include relevant images and screenshots
+										</p>
+									</div>
+									<Switch
+										id="include-images"
+										checked={readmeSettings.includeImages}
+										onCheckedChange={(checked) =>
+											setReadmeSettings((prev) => ({
+												...prev,
+												includeImages: checked,
+											}))
+										}
+									/>
+								</div>
+
+								<div className="flex items-center justify-between">
+									<div className="space-y-0.5">
+										<Label htmlFor="include-badges">Badges & Shields</Label>
+										<p className="text-muted-foreground text-sm">
+											Add status badges and shields
+										</p>
+									</div>
+									<Switch
+										id="include-badges"
+										checked={readmeSettings.includeBadges}
+										onCheckedChange={(checked) =>
+											setReadmeSettings((prev) => ({
+												...prev,
+												includeBadges: checked,
+											}))
+										}
+									/>
+								</div>
+
+								<div className="flex items-center justify-between">
+									<div className="space-y-0.5">
+										<Label htmlFor="include-toc">Table of Contents</Label>
+										<p className="text-muted-foreground text-sm">
+											Generate a table of contents
+										</p>
+									</div>
+									<Switch
+										id="include-toc"
+										checked={readmeSettings.includeToc}
+										onCheckedChange={(checked) =>
+											setReadmeSettings((prev) => ({
+												...prev,
+												includeToc: checked,
+											}))
+										}
+									/>
+								</div>
+							</div>
+						</div>
+
+						{/* Custom Prompt */}
+						<div className="space-y-2">
+							<Label htmlFor="custom-prompt">
+								Custom Instructions (Optional)
+							</Label>
+							<Textarea
+								id="custom-prompt"
+								placeholder="Add any specific instructions for the README generation..."
+								value={readmeSettings.customPrompt}
+								onChange={(e) =>
+									setReadmeSettings((prev) => ({
+										...prev,
+										customPrompt: e.target.value,
+									}))
+								}
+								rows={3}
+							/>
+							<p className="text-muted-foreground text-sm">
+								Provide specific instructions or requirements for your README
+							</p>
+						</div>
+					</div>
+
+					<div className="flex justify-end space-x-2 pt-4">
+						<Button
+							variant="outline"
+							onClick={() => setIsReadmeDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleConfirmGenerateReadme}
+							disabled={generateReadme.isPending}
+						>
+							{generateReadme.isPending ? "Generating..." : "Generate README"}
+						</Button>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
