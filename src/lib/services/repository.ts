@@ -24,6 +24,8 @@ export interface CreateRepositoryData {
 }
 
 export interface UpdateRepositoryData {
+	name?: string;
+	fullName?: string;
 	description?: string | null;
 	isPrivate?: boolean;
 	defaultBranch?: string;

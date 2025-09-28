@@ -13,6 +13,9 @@ export interface CreateInstallationData {
 }
 
 export interface UpdateInstallationData {
+	accountLogin?: string;
+	accountType?: string;
+	targetType?: string;
 	permissions?: Record<string, string>;
 	events?: string[];
 	suspendedAt?: Date | null;

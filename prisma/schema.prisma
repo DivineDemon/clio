@@ -1,10 +1,12 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
- 
-generator client {
-  provider = "prisma-client-js"
+  extensions = [vector]
 }
  
 model User {
@@ -169,6 +171,7 @@ model ReadmeJob {
   startedAt         DateTime?
   completedAt       DateTime?
   processingTime    Int?     // Duration in seconds
+  retryCount        Int      @default(0) // Number of retry attempts
   
   // Relations
   userId            String

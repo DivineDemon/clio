@@ -18,6 +18,7 @@ export interface UpdateReadmeJobData {
 	startedAt?: Date | null;
 	completedAt?: Date | null;
 	processingTime?: number | null;
+	retryCount?: number;
 }
 
 export interface CreateReadmeVersionData {

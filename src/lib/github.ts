@@ -122,7 +122,31 @@ export function verifyWebhookSignature(
 	payload: string,
 	signature: string,
 ): boolean {
-	// TODO: Implement webhook signature verification
-	// For now, return true (implement proper verification later)
-	return true;
+	try {
+		const secret = env.GITHUB_WEBHOOK_SECRET;
+		if (!secret) {
+			console.warn(
+				"GITHUB_WEBHOOK_SECRET not configured, skipping verification",
+			);
+			return true; // Allow in development if secret not set
+		}
+
+		// GitHub sends the signature as "sha256=<hash>"
+		const expectedSignature = signature.replace("sha256=", "");
+
+		// Create HMAC hash
+		const crypto = require("node:crypto");
+		const hmac = crypto.createHmac("sha256", secret);
+		hmac.update(payload, "utf8");
+		const calculatedSignature = hmac.digest("hex");
+
+		// Compare signatures using timing-safe comparison
+		return crypto.timingSafeEqual(
+			Buffer.from(expectedSignature, "hex"),
+			Buffer.from(calculatedSignature, "hex"),
+		);
+	} catch (error) {
+		console.error("Error verifying webhook signature:", error);
+		return false;
+	}
 }
