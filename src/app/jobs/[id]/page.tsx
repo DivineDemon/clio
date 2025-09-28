@@ -3,9 +3,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 interface JobPageProps {
-	params: {
+	params: Promise<{
 		id: string;
-	};
+	}>;
 }
 
 export default async function JobPage({ params }: JobPageProps) {
@@ -15,5 +15,6 @@ export default async function JobPage({ params }: JobPageProps) {
 		redirect("/");
 	}
 
-	return <JobDetailsPage jobId={params.id} user={session.user || {}} />;
+	const { id } = await params;
+	return <JobDetailsPage jobId={id} user={session.user || {}} />;
 }
