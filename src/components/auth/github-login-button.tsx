@@ -17,4 +17,5 @@ const GithubLoginButton = ({ className }: GithubLoginButtonProps) => {
 	);
 };
 
+export { GithubLoginButton };
 export default GithubLoginButton;
