@@ -171,6 +171,29 @@ export default function RepositoryList() {
 		}
 	};
 
+	const handleSyncRepositories = async () => {
+		if (!installationStatus?.installationId) {
+			alert("No installation ID found");
+			return;
+		}
+
+		console.log(
+			"Starting sync for installation ID:",
+			installationStatus.installationId,
+		);
+		setIsSyncing(true);
+		try {
+			const result = await syncInstallation.mutateAsync({
+				installationId: installationStatus.installationId.toString(),
+			});
+			console.log("Sync completed successfully:", result);
+		} catch (error) {
+			console.error("Sync error:", error);
+		} finally {
+			setIsSyncing(false);
+		}
+	};
+
 	const handleGenerateReadme = (repositoryId: string) => {
 		setSelectedRepoForReadme(repositoryId);
 		setIsReadmeDialogOpen(true);
@@ -358,6 +381,19 @@ export default function RepositoryList() {
 							/>
 							Refresh
 						</Button>
+						{installationStatus?.installed && (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleSyncRepositories}
+								disabled={isSyncing}
+							>
+								<RefreshCw
+									className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+								/>
+								Re-sync Repos
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>

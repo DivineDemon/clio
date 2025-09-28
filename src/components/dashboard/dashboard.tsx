@@ -1,5 +1,6 @@
 import GithubLogoutButton from "@/components/auth/github-logout-button";
 import InstallGithubAppButton from "@/components/dashboard/install-github-app-button";
+import RecentActivity from "@/components/dashboard/recent-activity";
 import RepositoryList from "@/components/dashboard/repository-list";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
 	Search,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 interface DashboardProps {
 	user: {
@@ -69,7 +71,10 @@ export default function Dashboard({ user }: DashboardProps) {
 
 				{/* Quick Actions */}
 				<div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<div className="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
+					<Link
+						href="#repositories"
+						className="rounded-lg bg-white p-6 shadow transition-colors hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+					>
 						<div className="flex items-center">
 							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
 								<Plus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -83,9 +88,12 @@ export default function Dashboard({ user }: DashboardProps) {
 								</p>
 							</div>
 						</div>
-					</div>
+					</Link>
 
-					<div className="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
+					<Link
+						href="#repositories"
+						className="rounded-lg bg-white p-6 shadow transition-colors hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+					>
 						<div className="flex items-center">
 							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
 								<GitBranch className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -99,64 +107,54 @@ export default function Dashboard({ user }: DashboardProps) {
 								</p>
 							</div>
 						</div>
-					</div>
+					</Link>
 
-					<div className="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
+					<Link
+						href="/history"
+						className="rounded-lg bg-white p-6 shadow transition-colors hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+					>
 						<div className="flex items-center">
 							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900">
 								<Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
 							</div>
 							<div className="ml-4">
 								<h3 className="font-semibold text-gray-900 text-lg dark:text-white">
-									Recent Jobs
+									Generation History
 								</h3>
 								<p className="text-gray-600 text-sm dark:text-gray-300">
-									View job history
+									View all jobs
 								</p>
 							</div>
 						</div>
-					</div>
+					</Link>
 
-					<div className="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
+					<Link
+						href="/history?status=COMPLETED"
+						className="rounded-lg bg-white p-6 shadow transition-colors hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+					>
 						<div className="flex items-center">
 							<div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900">
 								<CheckCircle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
 							</div>
 							<div className="ml-4">
 								<h3 className="font-semibold text-gray-900 text-lg dark:text-white">
-									Completed
+									Completed READMEs
 								</h3>
 								<p className="text-gray-600 text-sm dark:text-gray-300">
-									View completed READMEs
+									View completed jobs
 								</p>
 							</div>
 						</div>
-					</div>
+					</Link>
 				</div>
 
 				{/* Repositories Section */}
-				<RepositoryList />
+				<div id="repositories">
+					<RepositoryList />
+				</div>
 
 				{/* Recent Activity */}
-				<div className="mt-8 rounded-lg bg-white shadow dark:bg-slate-800">
-					<div className="border-gray-200 border-b px-6 py-4 dark:border-gray-700">
-						<h2 className="font-semibold text-gray-900 text-lg dark:text-white">
-							Recent Activity
-						</h2>
-					</div>
-
-					<div className="p-6">
-						<div className="py-12 text-center">
-							<Clock className="mx-auto h-12 w-12 text-gray-400" />
-							<h3 className="mt-4 font-semibold text-gray-900 text-lg dark:text-white">
-								No recent activity
-							</h3>
-							<p className="mt-2 text-gray-600 dark:text-gray-300">
-								Your README generation jobs will appear here.
-							</p>
-						</div>
-					</div>
-				</div>
+				<RecentActivity />
 			</main>
 		</div>
 	);
