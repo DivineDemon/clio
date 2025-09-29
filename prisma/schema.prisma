@@ -18,8 +18,6 @@ model User {
   accounts      Account[]
   sessions      Session[]
   Authenticator Authenticator[]
-  
-  // Clio-specific relations
   repositories      Repository[]
   readmeJobs        ReadmeJob[]
   githubInstallations GitHubInstallation[]
@@ -88,22 +86,19 @@ model Authenticator {
   @@id([userId, credentialID])
 }
 
-// ===== CLIO-SPECIFIC MODELS =====
-
 model GitHubInstallation {
   id                String   @id @default(cuid())
-  installationId    Int      @unique // GitHub's installation ID
-  accountId         Int      // GitHub account ID (user or org)
-  accountLogin      String   // GitHub username or org name
-  accountType       String   // "User" or "Organization"
-  targetType        String   // "User" or "Organization"
-  permissions       Json     // GitHub App permissions
-  events            String[] // Subscribed webhook events
+  installationId    Int      @unique
+  accountId         Int     
+  accountLogin      String  
+  accountType       String  
+  targetType        String  
+  permissions       Json    
+  events            String[]
   suspendedAt       DateTime?
   suspendedBy       Int?
   suspendedByLogin  String?
   
-  // Relations
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   repositories      Repository[]
@@ -117,16 +112,16 @@ model GitHubInstallation {
 
 model Repository {
   id                String   @id @default(cuid())
-  githubId          Int      @unique // GitHub repository ID
+  githubId          Int      @unique
   name              String
-  fullName          String   // "owner/repo"
-  owner             String   // Repository owner
+  fullName          String  
+  owner             String  
   description       String?
   isPrivate         Boolean
   defaultBranch     String
   language          String?
-  topics            String[] // Repository topics/tags
-  size              Int      // Repository size in KB
+  topics            String[]
+  size              Int     
   stargazersCount   Int
   forksCount        Int
   openIssuesCount   Int
@@ -135,7 +130,6 @@ model Repository {
   githubCreatedAt   DateTime
   githubUpdatedAt   DateTime
   
-  // Relations
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   installationId    String
@@ -153,27 +147,20 @@ model Repository {
 model ReadmeJob {
   id                String   @id @default(cuid())
   status            JobStatus @default(PENDING)
-  progress          Int      @default(0) // 0-100
+  progress          Int      @default(0)
   errorMessage      String?
-  
-  // Repository context
   repositoryId      String
   repository        Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  
-  // Generation settings
   includeImages     Boolean  @default(true)
   includeBadges     Boolean  @default(true)
   includeToc        Boolean  @default(true)
-  style             String   @default("professional") // "professional", "casual", "minimal"
-  customPrompt      String?  // User's custom instructions
-  
-  // Processing metadata
+  style             String   @default("professional")
+  customPrompt      String? 
   startedAt         DateTime?
   completedAt       DateTime?
-  processingTime    Int?     // Duration in seconds
-  retryCount        Int      @default(0) // Number of retry attempts
+  processingTime    Int?    
+  retryCount        Int      @default(0)
   
-  // Relations
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions          ReadmeVersion[]
@@ -188,17 +175,14 @@ model ReadmeJob {
 
 model ReadmeVersion {
   id                String   @id @default(cuid())
-  content           String   // Generated README content
-  contentHash       String   // SHA-256 hash for change detection
+  content           String
+  contentHash       String
   wordCount         Int
   characterCount    Int
-  
-  // Generation metadata
-  modelUsed         String?  // LLM model identifier
-  tokensUsed        Int?     // Token count for cost tracking
-  generationTime    Int?     // Generation time in seconds
-  
-  // Relations
+  modelUsed         String?
+  tokensUsed        Int?  
+  generationTime    Int?  
+
   jobId             String
   job               ReadmeJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 

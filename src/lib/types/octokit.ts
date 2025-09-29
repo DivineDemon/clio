@@ -3,19 +3,10 @@ import type { Octokit } from "@octokit/rest";
 export type { Octokit };
 
 export interface GitHubTreeItem {
-	type: "blob" | "tree";
-	path: string;
-	mode: string;
-	sha: string;
-	size?: number;
-	url?: string;
-}
-
-export interface GitHubFileContent {
-	type: "file" | "dir" | "symlink" | "submodule";
-	content?: string;
-	encoding?: string;
-	size?: number;
-	sha?: string;
-	url?: string;
+  type: "blob" | "tree";
+  path: string;
+  mode: string;
+  sha: string;
+  size?: number;
+  url?: string;
 }

@@ -1,206 +1,178 @@
-import { env } from "@/env";
 import { google } from "@ai-sdk/google";
 import { generateObject, generateText } from "ai";
 import type { z } from "zod";
+import { env } from "@/env";
 import type { FileStructure, KeyFile } from "./content-analyzer";
 
 export interface LLMModel {
-	id: string;
-	name: string;
-	description?: string;
-	maxTokens?: number;
-	contextWindow?: number;
+  id: string;
+  name: string;
+  description?: string;
+  maxTokens?: number;
+  contextWindow?: number;
 }
 
 export interface LLMResponse {
-	content: string;
-	model: string;
-	tokensUsed?: number;
-	generationTime?: number;
-	finishReason?: string;
+  content: string;
+  model: string;
+  tokensUsed?: number;
+  generationTime?: number;
+  finishReason?: string;
 }
 
 export interface LLMRequest {
-	prompt: string;
-	model?: string;
-	maxTokens?: number;
-	temperature?: number;
-	topP?: number;
-	stream?: boolean;
+  prompt: string;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
 }
 
-// Available Gemini models
 export const AVAILABLE_MODELS: LLMModel[] = [
-	{
-		id: "gemini-2.5-flash",
-		name: "Gemini 2.5 Flash",
-		description: "Fast and efficient model for quick responses",
-		maxTokens: 8192,
-		contextWindow: 1000000, // 1M tokens
-	},
-	{
-		id: "gemini-2.5-pro",
-		name: "Gemini 2.5 Pro",
-		description: "Advanced model for complex reasoning and analysis",
-		maxTokens: 8192,
-		contextWindow: 1000000, // 1M tokens
-	},
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    description: "Fast and efficient model for quick responses",
+    maxTokens: 8192,
+    contextWindow: 1000000,
+  },
+  {
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
+    description: "Advanced model for complex reasoning and analysis",
+    maxTokens: 8192,
+    contextWindow: 1000000,
+  },
 ];
 
 export class LLMService {
-	private apiKey: string;
-	private defaultModel: string;
+  private apiKey: string;
+  private defaultModel: string;
 
-	constructor() {
-		this.apiKey = env.GEMINI_API_KEY;
-		this.defaultModel = env.GEMINI_MODEL;
+  constructor() {
+    this.apiKey = env.GEMINI_API_KEY;
+    this.defaultModel = env.GEMINI_MODEL;
 
-		// Set the API key for the Google provider
-		process.env.GOOGLE_GENERATIVE_AI_API_KEY = this.apiKey;
-	}
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = this.apiKey;
+  }
 
-	/**
-	 * Get available models
-	 */
-	async getAvailableModels(): Promise<LLMModel[]> {
-		return AVAILABLE_MODELS;
-	}
+  async getAvailableModels(): Promise<LLMModel[]> {
+    return AVAILABLE_MODELS;
+  }
 
-	/**
-	 * Generate content using Gemini
-	 */
-	async generateContent(request: LLMRequest): Promise<LLMResponse> {
-		const startTime = Date.now();
-		const model = request.model || this.defaultModel;
+  async generateContent(request: LLMRequest): Promise<LLMResponse> {
+    const startTime = Date.now();
+    const model = request.model || this.defaultModel;
 
-		try {
-			const result = await generateText({
-				model: google(model),
-				prompt: request.prompt,
-			});
+    try {
+      const result = await generateText({
+        model: google(model),
+        prompt: request.prompt,
+      });
 
-			const generationTime = Date.now() - startTime;
+      const generationTime = Date.now() - startTime;
 
-			return {
-				content: result.text,
-				model: model,
-				tokensUsed: result.usage?.totalTokens,
-				generationTime,
-				finishReason: result.finishReason,
-			};
-		} catch (error) {
-			throw new Error(
-				`Failed to generate content: ${
-					error instanceof Error ? error.message : "Unknown error"
-				}`,
-			);
-		}
-	}
+      return {
+        content: result.text,
+        model: model,
+        tokensUsed: result.usage?.totalTokens,
+        generationTime,
+        finishReason: result.finishReason,
+      };
+    } catch (error) {
+      throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
 
-	/**
-	 * Generate README content with repository context
-	 */
-	async generateReadme(
-		repositoryData: {
-			name: string;
-			description?: string | null;
-			language?: string | null;
-			topics: string[];
-			structure: FileStructure;
-			files: KeyFile[];
-		},
-		options: {
-			style?: string;
-			includeImages?: boolean;
-			includeBadges?: boolean;
-			includeToc?: boolean;
-			customPrompt?: string | null;
-			model?: string;
-		} = {},
-	): Promise<LLMResponse> {
-		const {
-			style = "professional",
-			includeImages = true,
-			includeBadges = true,
-			includeToc = true,
-			customPrompt,
-			model,
-		} = options;
+  async generateReadme(
+    repositoryData: {
+      name: string;
+      description?: string | null;
+      language?: string | null;
+      topics: string[];
+      structure: FileStructure;
+      files: KeyFile[];
+    },
+    options: {
+      style?: string;
+      includeImages?: boolean;
+      includeBadges?: boolean;
+      includeToc?: boolean;
+      customPrompt?: string | null;
+      model?: string;
+    } = {},
+  ): Promise<LLMResponse> {
+    const {
+      style = "professional",
+      includeImages = true,
+      includeBadges = true,
+      includeToc = true,
+      customPrompt,
+      model,
+    } = options;
 
-		// Build the prompt based on repository data and options
-		const prompt = this.buildReadmePrompt(repositoryData, {
-			style,
-			includeImages,
-			includeBadges,
-			includeToc,
-			customPrompt,
-		});
+    const prompt = this.buildReadmePrompt(repositoryData, {
+      style,
+      includeImages,
+      includeBadges,
+      includeToc,
+      customPrompt,
+    });
 
-		return await this.generateContent({
-			prompt,
-			model,
-			maxTokens: 8192, // Increased for Gemini's larger context
-			temperature: 0.7,
-		});
-	}
+    return await this.generateContent({
+      prompt,
+      model,
+      maxTokens: 8192,
+      temperature: 0.7,
+    });
+  }
 
-	/**
-	 * Generate structured content using generateObject (for future use)
-	 */
-	async generateStructuredContent<T>(
-		prompt: string,
-		schema: z.ZodType<T>,
-		options: {
-			model?: string;
-			temperature?: number;
-		} = {},
-	): Promise<T> {
-		const { model = this.defaultModel, temperature = 0.7 } = options;
+  async generateStructuredContent<T>(
+    prompt: string,
+    schema: z.ZodType<T>,
+    options: {
+      model?: string;
+      temperature?: number;
+    } = {},
+  ): Promise<T> {
+    const { model = this.defaultModel, temperature = 0.7 } = options;
 
-		try {
-			const result = await generateObject({
-				model: google(model),
-				prompt,
-				schema,
-				temperature,
-			});
+    try {
+      const result = await generateObject({
+        model: google(model),
+        prompt,
+        schema,
+        temperature,
+      });
 
-			return result.object;
-		} catch (error) {
-			throw new Error(
-				`Failed to generate structured content: ${
-					error instanceof Error ? error.message : "Unknown error"
-				}`,
-			);
-		}
-	}
+      return result.object;
+    } catch (error) {
+      throw new Error(
+        `Failed to generate structured content: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  }
 
-	/**
-	 * Build a comprehensive prompt for README generation
-	 */
-	private buildReadmePrompt(
-		repositoryData: {
-			name: string;
-			description?: string | null;
-			language?: string | null;
-			topics: string[];
-			structure: FileStructure;
-			files: KeyFile[];
-		},
-		options: {
-			style: string;
-			includeImages: boolean;
-			includeBadges: boolean;
-			includeToc: boolean;
-			customPrompt?: string | null;
-		},
-	): string {
-		const { name, description, language, topics, structure, files } =
-			repositoryData;
-		const { style, includeImages, includeBadges, includeToc, customPrompt } =
-			options;
+  private buildReadmePrompt(
+    repositoryData: {
+      name: string;
+      description?: string | null;
+      language?: string | null;
+      topics: string[];
+      structure: FileStructure;
+      files: KeyFile[];
+    },
+    options: {
+      style: string;
+      includeImages: boolean;
+      includeBadges: boolean;
+      includeToc: boolean;
+      customPrompt?: string | null;
+    },
+  ): string {
+    const { name, description, language, topics, structure, files } = repositoryData;
+    const { style, includeImages, includeBadges, includeToc, customPrompt } = options;
 
-		const prompt = `You are an expert technical writer specializing in creating comprehensive, professional README.md files for GitHub repositories.
+    const prompt = `You are an expert technical writer specializing in creating comprehensive, professional README.md files for GitHub repositories.
 
 REPOSITORY INFORMATION:
 - Name: ${name}
@@ -243,9 +215,8 @@ REQUIREMENTS:
 
 Generate the complete README.md content now:`;
 
-		return prompt;
-	}
+    return prompt;
+  }
 }
 
-// Export a singleton instance
 export const llmService = new LLMService();

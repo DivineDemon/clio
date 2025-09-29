@@ -1,421 +1,385 @@
+import { z } from "zod";
 import { getInstallationUrl, isAppInstalled } from "@/lib/github";
 import { findUserInstallation } from "@/lib/github-installations";
-import {
-	getFileContent,
-	getRepositoryInfo,
-	getRepositoryStructure,
-	getRepositoryTree,
-} from "@/lib/repository";
+import { logger } from "@/lib/logger";
+import { getFileContent, getRepositoryInfo, getRepositoryStructure, getRepositoryTree } from "@/lib/repository";
 import { getRepositoriesByUserId } from "@/lib/services/repository";
-import {
-	createTRPCRouter,
-	protectedProcedure,
-	publicProcedure,
-} from "@/server/api/trpc";
-import { z } from "zod";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 
 export const githubRouter = createTRPCRouter({
-	checkInstallation: publicProcedure
-		.input(
-			z.object({
-				owner: z.string(),
-				repo: z.string(),
-			}),
-		)
-		.query(async ({ input }) => {
-			const installed = await isAppInstalled(input.owner, input.repo);
-			const installationUrl = await getInstallationUrl(input.owner);
+  checkInstallation: publicProcedure
+    .input(
+      z.object({
+        owner: z.string(),
+        repo: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const installed = await isAppInstalled(input.owner, input.repo);
+      const installationUrl = await getInstallationUrl(input.owner);
 
-			return {
-				installed,
-				installationUrl,
-				repository: `${input.owner}/${input.repo}`,
-			};
-		}),
-	checkUserInstallation: protectedProcedure.query(async ({ ctx }) => {
-		const userId = ctx.session.user.id;
-		if (!userId) {
-			throw new Error("User ID not found in session");
-		}
+      return {
+        installed,
+        installationUrl,
+        repository: `${input.owner}/${input.repo}`,
+      };
+    }),
+  checkUserInstallation: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    if (!userId) {
+      throw new Error("User ID not found in session");
+    }
 
-		// First check if we have repositories in our database
-		const repositories = await getRepositoriesByUserId(userId);
-		if (repositories.length > 0) {
-			const installationUrl = await getInstallationUrl("");
-			// Get the installation ID from the first repository
-			const installationId = repositories[0]?.installation?.installationId;
-			return {
-				installed: true,
-				installationUrl,
-				repositoryCount: repositories.length,
-				source: "database",
-				installationId,
-			};
-		}
+    const repositories = await getRepositoriesByUserId(userId);
+    if (repositories.length > 0) {
+      const installationUrl = await getInstallationUrl("");
 
-		// Check if we have any installations in our database for this user
-		const { getInstallationsByUserId } = await import(
-			"@/lib/services/github-installation"
-		);
-		const existingInstallations = await getInstallationsByUserId(userId);
-		if (existingInstallations.length > 0) {
-			const installationUrl = await getInstallationUrl("");
-			return {
-				installed: true,
-				installationUrl,
-				repositoryCount: repositories.length,
-				source: "database",
-				hasInstallation: true,
-				needsSync: repositories.length === 0, // Needs sync if no repositories
-				installationId: existingInstallations[0]?.installationId,
-				accountLogin: existingInstallations[0]?.accountLogin,
-			};
-		}
+      const installationId = repositories[0]?.installation?.installationId;
+      return {
+        installed: true,
+        installationUrl,
+        repositoryCount: repositories.length,
+        source: "database",
+        installationId,
+      };
+    }
 
-		// If no installations in database, check GitHub directly
-		try {
-			console.log(`Checking GitHub installations for user ${userId}...`);
-			const githubInstallation = await findUserInstallation(userId);
-			console.log("GitHub installation result:", githubInstallation);
-			if (githubInstallation) {
-				// Automatically sync the installation to our database
-				console.log(
-					`Auto-syncing installation ${githubInstallation.id} to database...`,
-				);
-				try {
-					const { fetchInstallationDetails, getInstallationRepositories } =
-						await import("@/lib/services/github-api");
-					const { createInstallation } = await import(
-						"@/lib/services/github-installation"
-					);
-					const { createRepository } = await import(
-						"@/lib/services/repository"
-					);
+    const { getInstallationsByUserId } = await import("@/lib/services/github-installation");
+    const existingInstallations = await getInstallationsByUserId(userId);
+    if (existingInstallations.length > 0) {
+      const installationUrl = await getInstallationUrl("");
+      return {
+        installed: true,
+        installationUrl,
+        repositoryCount: repositories.length,
+        source: "database",
+        hasInstallation: true,
+        needsSync: repositories.length === 0,
+        installationId: existingInstallations[0]?.installationId,
+        accountLogin: existingInstallations[0]?.accountLogin,
+      };
+    }
 
-					// Fetch installation details
-					const installationDetails = await fetchInstallationDetails(
-						githubInstallation.id,
-						"dummy-owner",
-						"dummy-repo",
-					);
+    try {
+      logger.debug("Checking GitHub installations", { userId });
+      const githubInstallation = await findUserInstallation(userId);
+      if (githubInstallation) {
+        logger.info("Auto-syncing installation to database", {
+          installationId: githubInstallation.id,
+        });
+        try {
+          const { fetchInstallationDetails, getInstallationRepositories } = await import("@/lib/services/github-api");
+          const { createInstallation } = await import("@/lib/services/github-installation");
+          const { createRepository } = await import("@/lib/services/repository");
 
-					if (installationDetails) {
-						// Create installation in database
-						const createdInstallation = await createInstallation({
-							installationId: installationDetails.id,
-							accountId: installationDetails.accountId,
-							accountLogin: installationDetails.accountLogin,
-							accountType: installationDetails.accountType,
-							targetType: installationDetails.targetType,
-							permissions: installationDetails.permissions,
-							events: installationDetails.events,
-							userId: userId,
-						});
+          const installationDetails = await fetchInstallationDetails(
+            githubInstallation.id,
+            "dummy-owner",
+            "dummy-repo",
+          );
 
-						// Fetch and create repositories
-						const repositories = await getInstallationRepositories(
-							githubInstallation.id,
-							"dummy-owner",
-							"dummy-repo",
-						);
+          if (installationDetails) {
+            const createdInstallation = await createInstallation({
+              installationId: installationDetails.id,
+              accountId: installationDetails.accountId,
+              accountLogin: installationDetails.accountLogin,
+              accountType: installationDetails.accountType,
+              targetType: installationDetails.targetType,
+              permissions: installationDetails.permissions,
+              events: installationDetails.events,
+              userId: userId,
+            });
 
-						let createdRepos = 0;
-						for (const repo of repositories) {
-							try {
-								await createRepository({
-									githubId: repo.id,
-									name: repo.name,
-									fullName: repo.fullName,
-									owner: repo.owner,
-									description: repo.description,
-									isPrivate: repo.isPrivate,
-									defaultBranch: repo.defaultBranch,
-									language: repo.language,
-									topics: repo.topics,
-									size: repo.size,
-									stargazersCount: repo.stargazersCount,
-									forksCount: repo.forksCount,
-									openIssuesCount: repo.openIssuesCount,
-									watchersCount: repo.watchersCount,
-									pushedAt: repo.pushedAt,
-									githubCreatedAt: repo.githubCreatedAt,
-									githubUpdatedAt: repo.githubUpdatedAt,
-									userId: userId,
-									installationId: createdInstallation.id,
-								});
-								createdRepos++;
-							} catch (error) {
-								console.log(
-									`Repository ${repo.fullName} already exists, skipping`,
-								);
-							}
-						}
+            const repositories = await getInstallationRepositories(githubInstallation.id, "dummy-owner", "dummy-repo");
 
-						console.log(
-							`Successfully auto-synced installation ${githubInstallation.id} with ${createdRepos} repositories`,
-						);
+            let createdRepos = 0;
+            for (const repo of repositories) {
+              try {
+                await createRepository({
+                  githubId: repo.id,
+                  name: repo.name,
+                  fullName: repo.fullName,
+                  owner: repo.owner,
+                  description: repo.description,
+                  isPrivate: repo.isPrivate,
+                  defaultBranch: repo.defaultBranch,
+                  language: repo.language,
+                  topics: repo.topics,
+                  size: repo.size,
+                  stargazersCount: repo.stargazersCount,
+                  forksCount: repo.forksCount,
+                  openIssuesCount: repo.openIssuesCount,
+                  watchersCount: repo.watchersCount,
+                  pushedAt: repo.pushedAt,
+                  githubCreatedAt: repo.githubCreatedAt,
+                  githubUpdatedAt: repo.githubUpdatedAt,
+                  userId: userId,
+                  installationId: createdInstallation.id,
+                });
+                createdRepos++;
+              } catch (error) {
+                logger.debug(`Repository already exists, skipping: ${(error as Error).message}`, {
+                  repository: repo.fullName,
+                });
+              }
+            }
 
-						const installationUrl = await getInstallationUrl("");
-						return {
-							installed: true,
-							installationUrl,
-							repositoryCount: createdRepos,
-							source: "database",
-							hasInstallation: true,
-							needsSync: false,
-						};
-					}
-				} catch (syncError) {
-					console.error("Failed to auto-sync installation:", syncError);
-					// Fall back to manual sync
-					const installationUrl = await getInstallationUrl("");
-					return {
-						installed: true,
-						installationUrl,
-						repositoryCount: 0,
-						source: "github",
-						installationId: githubInstallation.id,
-						accountLogin: githubInstallation.account.login,
-						needsSync: true,
-					};
-				}
-			}
-		} catch (error) {
-			console.error("Failed to check GitHub installations:", error);
-		}
+            logger.info("Successfully auto-synced installation", {
+              installationId: githubInstallation.id,
+              repositoryCount: createdRepos,
+            });
 
-		// No installation found
-		const installationUrl = await getInstallationUrl("");
-		return {
-			installed: false,
-			installationUrl,
-			repositoryCount: 0,
-			source: "none",
-		};
-	}),
-	getRepositoryInfo: publicProcedure
-		.input(
-			z.object({
-				owner: z.string(),
-				repo: z.string(),
-			}),
-		)
-		.query(async ({ input }) => {
-			return await getRepositoryInfo(input.owner, input.repo);
-		}),
-	getRepositoryTree: publicProcedure
-		.input(
-			z.object({
-				owner: z.string(),
-				repo: z.string(),
-				branch: z.string().optional(),
-			}),
-		)
-		.query(async ({ input }) => {
-			return await getRepositoryTree(input.owner, input.repo, input.branch);
-		}),
-	getFileContent: publicProcedure
-		.input(
-			z.object({
-				owner: z.string(),
-				repo: z.string(),
-				path: z.string(),
-				branch: z.string().optional(),
-			}),
-		)
-		.query(async ({ input }) => {
-			return await getFileContent(
-				input.owner,
-				input.repo,
-				input.path,
-				input.branch,
-			);
-		}),
-	getRepositoryStructure: publicProcedure
-		.input(
-			z.object({
-				owner: z.string(),
-				repo: z.string(),
-			}),
-		)
-		.query(async ({ input }) => {
-			return await getRepositoryStructure(input.owner, input.repo);
-		}),
-	getInstallationUrl: publicProcedure
-		.input(
-			z.object({
-				owner: z.string().optional(),
-			}),
-		)
-		.query(async ({ input }) => {
-			return getInstallationUrl(input.owner);
-		}),
-	getUserRepositories: protectedProcedure.query(async ({ ctx }) => {
-		const userId = ctx.session.user.id;
-		if (!userId) {
-			throw new Error("User ID not found in session");
-		}
-		return await getRepositoriesByUserId(userId);
-	}),
-	syncInstallation: protectedProcedure
-		.input(
-			z.object({
-				installationId: z.string(),
-			}),
-		)
-		.mutation(async ({ input, ctx }) => {
-			const userId = ctx.session.user.id;
-			if (!userId) {
-				throw new Error("User ID not found in session");
-			}
+            const installationUrl = await getInstallationUrl("");
+            return {
+              installed: true,
+              installationUrl,
+              repositoryCount: createdRepos,
+              source: "database",
+              hasInstallation: true,
+              needsSync: false,
+            };
+          }
+        } catch (syncError) {
+          logger.error("Failed to auto-sync installation", syncError as Error, {
+            installationId: githubInstallation.id,
+          });
 
-			// Import the sync logic directly instead of making HTTP call
-			const { fetchInstallationDetails, getInstallationRepositories } =
-				await import("@/lib/services/github-api");
-			const { createInstallation, getInstallationByInstallationId } =
-				await import("@/lib/services/github-installation");
-			const { createRepository } = await import("@/lib/services/repository");
+          const installationUrl = await getInstallationUrl("");
+          return {
+            installed: true,
+            installationUrl,
+            repositoryCount: 0,
+            source: "github",
+            installationId: githubInstallation.id,
+            accountLogin: githubInstallation.account.login,
+            needsSync: true,
+          };
+        }
+      }
+    } catch (error) {
+      logger.error("Failed to check GitHub installations", error as Error, {
+        userId,
+      });
+    }
 
-			const installationIdNum = Number.parseInt(input.installationId);
+    const installationUrl = await getInstallationUrl("");
+    return {
+      installed: false,
+      installationUrl,
+      repositoryCount: 0,
+      source: "none",
+    };
+  }),
+  getRepositoryInfo: publicProcedure
+    .input(
+      z.object({
+        owner: z.string(),
+        repo: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      return await getRepositoryInfo(input.owner, input.repo);
+    }),
+  getRepositoryTree: publicProcedure
+    .input(
+      z.object({
+        owner: z.string(),
+        repo: z.string(),
+        branch: z.string().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      return await getRepositoryTree(input.owner, input.repo, input.branch);
+    }),
+  getFileContent: publicProcedure
+    .input(
+      z.object({
+        owner: z.string(),
+        repo: z.string(),
+        path: z.string(),
+        branch: z.string().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      return await getFileContent(input.owner, input.repo, input.path, input.branch);
+    }),
+  getRepositoryStructure: publicProcedure
+    .input(
+      z.object({
+        owner: z.string(),
+        repo: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      return await getRepositoryStructure(input.owner, input.repo);
+    }),
+  getInstallationUrl: publicProcedure
+    .input(
+      z.object({
+        owner: z.string().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      return getInstallationUrl(input.owner);
+    }),
+  getUserRepositories: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    if (!userId) {
+      throw new Error("User ID not found in session");
+    }
+    return await getRepositoriesByUserId(userId);
+  }),
+  syncInstallation: protectedProcedure
+    .input(
+      z.object({
+        installationId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+      if (!userId) {
+        throw new Error("User ID not found in session");
+      }
 
-			// Check if installation already exists in our database
-			const existingInstallation =
-				await getInstallationByInstallationId(installationIdNum);
+      const { fetchInstallationDetails, getInstallationRepositories } = await import("@/lib/services/github-api");
+      const { createInstallation, getInstallationByInstallationId } = await import(
+        "@/lib/services/github-installation"
+      );
+      const { createRepository } = await import("@/lib/services/repository");
 
-			if (existingInstallation) {
-				// Installation exists, but we might need to sync repositories
-				console.log(
-					`Installation ${installationIdNum} already exists, syncing repositories...`,
-				);
+      const installationIdNum = Number.parseInt(input.installationId);
 
-				// Fetch and create repositories
-				const installationDetails = await fetchInstallationDetails(
-					installationIdNum,
-					"dummy-owner",
-					"dummy-repo",
-				);
+      const existingInstallation = await getInstallationByInstallationId(installationIdNum);
 
-				if (!installationDetails) {
-					throw new Error("Failed to fetch installation details from GitHub");
-				}
+      if (existingInstallation) {
+        logger.info("Installation already exists, syncing repositories", {
+          installationId: installationIdNum,
+        });
 
-				const repositories = await getInstallationRepositories(
-					installationIdNum,
-					installationDetails.accountLogin,
-					"dummy-repo",
-				);
+        const installationDetails = await fetchInstallationDetails(installationIdNum, "dummy-owner", "dummy-repo");
 
-				let createdRepos = 0;
-				for (const repo of repositories) {
-					try {
-						await createRepository({
-							githubId: repo.id,
-							name: repo.name,
-							fullName: repo.fullName,
-							owner: repo.owner,
-							description: repo.description,
-							isPrivate: repo.isPrivate,
-							defaultBranch: repo.defaultBranch,
-							language: repo.language,
-							topics: repo.topics,
-							size: repo.size,
-							stargazersCount: repo.stargazersCount,
-							forksCount: repo.forksCount,
-							openIssuesCount: repo.openIssuesCount,
-							watchersCount: repo.watchersCount,
-							pushedAt: repo.pushedAt,
-							githubCreatedAt: repo.githubCreatedAt,
-							githubUpdatedAt: repo.githubUpdatedAt,
-							userId: userId,
-							installationId: existingInstallation.id,
-						});
-						createdRepos++;
-					} catch (error) {
-						console.log(`Repository ${repo.fullName} already exists, skipping`);
-					}
-				}
+        if (!installationDetails) {
+          throw new Error("Failed to fetch installation details from GitHub");
+        }
 
-				return {
-					message: "Repositories synced successfully",
-					installationId: existingInstallation.installationId,
-					accountLogin: existingInstallation.accountLogin,
-					repositoryCount: createdRepos,
-				};
-			}
+        const repositories = await getInstallationRepositories(
+          installationIdNum,
+          installationDetails.accountLogin,
+          "dummy-repo",
+        );
 
-			// Fetch installation details from GitHub
-			console.log(`Fetching installation details for ${installationIdNum}...`);
-			const installationDetails = await fetchInstallationDetails(
-				installationIdNum,
-				"dummy-owner",
-				"dummy-repo",
-			);
+        let createdRepos = 0;
+        for (const repo of repositories) {
+          try {
+            await createRepository({
+              githubId: repo.id,
+              name: repo.name,
+              fullName: repo.fullName,
+              owner: repo.owner,
+              description: repo.description,
+              isPrivate: repo.isPrivate,
+              defaultBranch: repo.defaultBranch,
+              language: repo.language,
+              topics: repo.topics,
+              size: repo.size,
+              stargazersCount: repo.stargazersCount,
+              forksCount: repo.forksCount,
+              openIssuesCount: repo.openIssuesCount,
+              watchersCount: repo.watchersCount,
+              pushedAt: repo.pushedAt,
+              githubCreatedAt: repo.githubCreatedAt,
+              githubUpdatedAt: repo.githubUpdatedAt,
+              userId: userId,
+              installationId: existingInstallation.id,
+            });
+            createdRepos++;
+          } catch (error) {
+            logger.debug(`Repository already exists, skipping: ${(error as Error).message}`, {
+              repository: repo.fullName,
+            });
+          }
+        }
 
-			if (!installationDetails) {
-				throw new Error("Failed to fetch installation details from GitHub");
-			}
+        return {
+          message: "Repositories synced successfully",
+          installationId: existingInstallation.installationId,
+          accountLogin: existingInstallation.accountLogin,
+          repositoryCount: createdRepos,
+        };
+      }
 
-			// Create installation in our database
-			await createInstallation({
-				installationId: installationDetails.id,
-				accountId: installationDetails.accountId,
-				accountLogin: installationDetails.accountLogin,
-				accountType: installationDetails.accountType,
-				targetType: installationDetails.targetType,
-				permissions: installationDetails.permissions,
-				events: installationDetails.events,
-				userId: userId,
-			});
+      logger.info("Fetching installation details", {
+        installationId: installationIdNum,
+      });
+      const installationDetails = await fetchInstallationDetails(installationIdNum, "dummy-owner", "dummy-repo");
 
-			// Fetch and create repositories
-			console.log(
-				`Fetching repositories for installation ${installationIdNum}...`,
-			);
-			const repositories = await getInstallationRepositories(
-				installationIdNum,
-				installationDetails.accountLogin,
-				"dummy-repo",
-			);
+      if (!installationDetails) {
+        throw new Error("Failed to fetch installation details from GitHub");
+      }
 
-			let createdRepos = 0;
-			for (const repo of repositories) {
-				try {
-					await createRepository({
-						githubId: repo.id,
-						name: repo.name,
-						fullName: repo.fullName,
-						owner: repo.owner,
-						description: repo.description,
-						isPrivate: repo.isPrivate,
-						defaultBranch: repo.defaultBranch,
-						language: repo.language,
-						topics: repo.topics,
-						size: repo.size,
-						stargazersCount: repo.stargazersCount,
-						forksCount: repo.forksCount,
-						openIssuesCount: repo.openIssuesCount,
-						watchersCount: repo.watchersCount,
-						pushedAt: repo.pushedAt,
-						githubCreatedAt: repo.githubCreatedAt,
-						githubUpdatedAt: repo.githubUpdatedAt,
-						userId: userId,
-						installationId: input.installationId,
-					});
-					createdRepos++;
-				} catch (error) {
-					console.log(`Repository ${repo.fullName} already exists, skipping`);
-				}
-			}
+      await createInstallation({
+        installationId: installationDetails.id,
+        accountId: installationDetails.accountId,
+        accountLogin: installationDetails.accountLogin,
+        accountType: installationDetails.accountType,
+        targetType: installationDetails.targetType,
+        permissions: installationDetails.permissions,
+        events: installationDetails.events,
+        userId: userId,
+      });
 
-			console.log(
-				`Successfully synced installation ${installationIdNum} for ${installationDetails.accountLogin} with ${createdRepos} repositories`,
-			);
+      logger.info("Fetching repositories for installation", {
+        installationId: installationIdNum,
+      });
+      const repositories = await getInstallationRepositories(
+        installationIdNum,
+        installationDetails.accountLogin,
+        "dummy-repo",
+      );
 
-			return {
-				message: "Installation synced successfully",
-				installationId: installationDetails.id,
-				accountLogin: installationDetails.accountLogin,
-				repositoryCount: createdRepos,
-			};
-		}),
+      let createdRepos = 0;
+      for (const repo of repositories) {
+        try {
+          await createRepository({
+            githubId: repo.id,
+            name: repo.name,
+            fullName: repo.fullName,
+            owner: repo.owner,
+            description: repo.description,
+            isPrivate: repo.isPrivate,
+            defaultBranch: repo.defaultBranch,
+            language: repo.language,
+            topics: repo.topics,
+            size: repo.size,
+            stargazersCount: repo.stargazersCount,
+            forksCount: repo.forksCount,
+            openIssuesCount: repo.openIssuesCount,
+            watchersCount: repo.watchersCount,
+            pushedAt: repo.pushedAt,
+            githubCreatedAt: repo.githubCreatedAt,
+            githubUpdatedAt: repo.githubUpdatedAt,
+            userId: userId,
+            installationId: input.installationId,
+          });
+          createdRepos++;
+        } catch (error) {
+          logger.debug(`Repository already exists, skipping: ${(error as Error).message}`, {
+            repository: repo.fullName,
+          });
+        }
+      }
+
+      logger.info("Successfully synced installation", {
+        installationId: installationIdNum,
+        accountLogin: installationDetails.accountLogin,
+        repositoryCount: createdRepos,
+      });
+
+      return {
+        message: "Installation synced successfully",
+        installationId: installationDetails.id,
+        accountLogin: installationDetails.accountLogin,
+        repositoryCount: createdRepos,
+      };
+    }),
 });

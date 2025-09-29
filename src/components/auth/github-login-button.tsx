@@ -1,20 +1,21 @@
 "use client";
 
+import type React from "react";
 import { login } from "@/lib/server-actions/auth";
 import { cn } from "@/lib/utils";
-import React from "react";
 import { Button } from "../ui/button";
 
 interface GithubLoginButtonProps {
-	className?: string;
+  className?: string;
+  children?: React.ReactNode;
 }
 
-const GithubLoginButton = ({ className }: GithubLoginButtonProps) => {
-	return (
-		<Button type="button" onClick={login} className={cn("w-auto", className)}>
-			Sign in with GitHub
-		</Button>
-	);
+const GithubLoginButton = ({ className, children }: GithubLoginButtonProps) => {
+  return (
+    <Button type="button" onClick={login} className={cn("w-auto", className)}>
+      {children || "Sign in with GitHub"}
+    </Button>
+  );
 };
 
 export { GithubLoginButton };
