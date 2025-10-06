@@ -1,473 +1,355 @@
-# Clio — The Muse of History
+# clio
 
-> *"Clio — the Muse of History, telling the story of your code"*
+![Clio Banner](https://img.shields.io/badge/Clio-AI%20README%20Generator-blueviolet)
 
-Clio is a web service that reads any GitHub repository (public, private, or organization), analyzes its structure and code, and produces a beautifully structured, comprehensive `README.md`. Users can request generations, view, download, and track history of generated READMEs.
+`clio` is an innovative SaaS platform designed to streamline and automate the creation of high-quality `README.md` files for your GitHub repositories. Leveraging advanced AI capabilities, `clio` analyzes your codebase, identifies key components, and generates comprehensive, professional, and well-structured READMEs, saving developers valuable time and ensuring project documentation is always up-to-date and informative.
 
-## 🎯 Vision & Features
 
-- **Universal Repository Support**: Works with public, private, and organization GitHub repositories
-- **GitHub Authentication**: Secure authentication via GitHub OAuth and GitHub App
-- **Asynchronous Processing**: Generate READMEs in the background with email notifications
-- **No Repository Modification**: Only generates, views, downloads, and tracks history - never pushes to repos
-- **Comprehensive Analysis**: Deep code structure analysis using self-hosted LLM backend
+## 🚀 Features
+- **AI-Powered Content Generation**: Intelligent analysis of repository contents to produce relevant and detailed `README.md` sections.
+- **Seamless GitHub Integration**: Connects directly with your GitHub account to access repositories and commit generated READMEs.
+- **Interactive Dashboard**: Manage your connected repositories, monitor README generation jobs, and review output.
+- **Customizable Output**: Fine-tune generated READMEs to match your project's specific needs and branding.
+- **Real-time Job Status**: Track the progress of your README generation tasks from initiation to completion.
+- **Version Control**: Automatically handles updates and commits to your repositories.
 
-## 🏗️ Tech Stack
 
-- **Frontend**: Next.js 15, React 19, Tailwind CSS, shadcn/ui
+## ⚙️ Technologies Used
+- **Frontend**: Next.js (React), Tailwind CSS, shadcn/ui
 - **Backend**: Next.js API Routes, tRPC
-- **Database**: Prisma + Neon PostgreSQL
-- **Authentication**: NextAuth.js with GitHub OAuth
-- **GitHub Integration**: GitHub App + Octokit
-- **LLM Backend**: Google Gemini 2.5 (Flash & Pro) via Vercel AI SDK
-- **Email**: EmailJS for notifications
+- **Database**: Prisma (ORM), PostgreSQL
+- **Authentication**: NextAuth.js
+- **AI/LLM Integration**: TypeScript services for interacting with Language Models
+- **GitHub Integration**: Octokit, GitHub App Webhooks
+- **Package Manager**: pnpm
+- **Linting/Formatting**: Biome
 
-## 📄 Application Pages & Structure
 
-### **Public Pages**
-- **`/`** - Landing Page
-- **`/auth/signin`** - Login Page
-- **`/auth/signup`** - Register Page  
-- **`/auth/forgot-password`** - Forgot Password
-- **`/help`** - Help & Documentation
-- **`/terms`** - Terms of Service
-- **`/privacy`** - Privacy Policy
-- **`/cookies`** - Cookie Policy
-- **`/dpa`** - Data Processing Agreement
+## 📛 Badges
 
-### **Protected Pages (Require Authentication)**
-- **`/dashboard`** - Main Dashboard
-- **`/repositories`** - Repository Selection
-- **`/generate`** - Generate README Form
-- **`/jobs/[id]`** - Job Status & Results
-- **`/history`** - Job History
-- **`/settings`** - Account Settings
+| Badge                                                                               | Description                                    |
+| :---------------------------------------------------------------------------------- | :--------------------------------------------- |
+| ![GitHub last commit](https://img.shields.io/github/last-commit/username/clio)    | Shows the date of the last commit.             |
+| ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/username/clio/main.yml) | Placeholder for your CI/CD build status.       |
+| ![GitHub top language](https://img.shields.io/github/languages/top/username/clio) | Indicates the primary programming language.    |
+| ![GitHub contributors](https://img.shields.io/github/contributors/username/clio) | Shows the number of project contributors.      |
+| ![GitHub license](https://img.shields.io/github/license/username/clio)            | Displays the project's license (e.g., MIT).    |
 
-### **API Routes**
-- **`/api/auth/[...nextauth]`** - NextAuth.js endpoints
-- **`/api/trpc/[trpc]`** - tRPC API routes
-- **`/api/github/install`** - GitHub App installation
-- **`/api/github/webhook`** - GitHub webhooks
-- **`/api/jobs`** - Job management
-- **`/api/email`** - Email notifications
+**Note**: Replace `username/clio` with the actual GitHub repository path once available. For the build status, update `main.yml` to your CI/CD workflow file name.
 
-## 🚀 Development Roadmap
 
-### Phase 1: Authentication & GitHub Integration Setup
-**Duration**: 1-2 weeks
+## 📚 Table of Contents
+- [clio](#clio)
+- [🚀 Features](#-features)
+- [⚙️ Technologies Used](#-technologies-used)
+- [📛 Badges](#-badges)
+- [📚 Table of Contents](#-table-of-contents)
+- [🛠️ Installation](#%ef%b8%8f-installation)
+- [Prerequisites](#prerequisites)
+- [Clone the Repository](#clone-the-repository)
+- [Install Dependencies](#install-dependencies)
+- [Environment Variables](#environment-variables)
+- [Database Setup](#database-setup)
+- [GitHub App Setup](#github-app-setup)
+- [Run the Development Server](#run-the-development-server)
+- [💡 Usage](#-usage)
+- [Authentication](#authentication)
+- [Install GitHub App](#install-github-app)
+- [Generate a README](#generate-a-readme)
+- [Monitoring Jobs](#monitoring-jobs)
+- [API Endpoints](#api-endpoints)
+- [tRPC API](#trpc-api)
+- [Next.js API Routes](#nextjs-api-routes)
+- [⚙️ Configuration](#%ef%b8%8f-configuration)
+- [Environment Variables](#environment-variables-1)
+- [Code Formatting & Linting](#code-formatting--linting)
+- [UI Components](#ui-components)
+- [🤝 Contributing](#-contributing)
+- [Local Development Setup](#local-development-setup)
+- [Submitting Changes](#submitting-changes)
+- [📄 License](#-license)
+- [❓ Support](#-support)
 
-#### 1.1 NextAuth.js Configuration
-- [ ] Install and configure NextAuth.js with GitHub provider
-- [ ] Set up environment variables for GitHub OAuth
-- [ ] Create authentication pages (sign-in, callback)
-- [ ] Implement session management and user context
 
-#### 1.2 GitHub App Setup
-- [ ] Create GitHub App in GitHub Developer Settings
-- [ ] Configure app permissions (Repository Contents: Read, Metadata: Read)
-- [ ] Set up webhook endpoints for installation events
-- [ ] Create installation flow and redirect URLs
+## 🛠️ Installation
 
-#### 1.3 Octokit Integration
-- [ ] Install and configure @octokit/rest and @octokit/auth-app
-- [ ] Implement installation token generation
-- [ ] Create repository access validation functions
-- [ ] Set up error handling for GitHub API calls
+Follow these steps to set up `clio` locally for development.
 
-### Phase 2: Database Schema & Models
-**Duration**: 1 week
-
-#### 2.1 Prisma Schema Design
-- [ ] Design User model with GitHub integration
-- [ ] Create Installation model for GitHub App installations
-- [ ] Design GenerationJob model for async processing
-- [ ] Create ReadmeHistory model for version tracking
-- [ ] Add proper indexes and relationships
-
-#### 2.2 Database Migration
-- [ ] Generate and run initial migration
-- [ ] Set up database seeding for development
-- [ ] Configure Neon PostgreSQL connection
-- [ ] Test database operations
-
-### Phase 3: GitHub App Configuration & API Integration
-**Duration**: 1-2 weeks
-
-#### 3.1 Repository Access Layer
-- [ ] Implement repository installation checking
-- [ ] Create repository tree fetching functionality
-- [ ] Implement file content retrieval
-- [ ] Add repository metadata extraction
-
-#### 3.2 API Routes Development
-- [ ] Create `/api/auth` endpoints
-- [ ] Implement `/api/check-installation` endpoint
-- [ ] Create `/api/install-url` endpoint
-- [ ] Build `/api/generate-readme` endpoint
-- [ ] Add job status and result endpoints
-
-#### 3.3 Error Handling & Edge Cases
-- [ ] Handle repository access denied scenarios
-- [ ] Implement rate limiting and retry logic
-- [ ] Add support for large repositories
-- [ ] Create fallback mechanisms for OAuth
-
-### Phase 4: Core UI Components & Dashboard
-**Duration**: 2-3 weeks
-
-#### 4.1 Design System Setup
-- [ ] Install and configure shadcn/ui components
-- [ ] Set up Tailwind CSS with custom theme
-- [ ] Create reusable component library
-- [ ] Implement responsive design patterns
-
-#### 4.2 Page Structure & Routing
-- [ ] Set up Next.js App Router page structure
-- [ ] Implement protected route middleware
-- [ ] Create layout components and navigation
-- [ ] Add error boundaries and loading states
-
-#### 4.3 Landing Page (`/`)
-**Content Requirements:**
-- Hero section with Clio branding and tagline
-- Feature highlights (GitHub integration, async processing, no repo modification)
-- How it works (3-step process: Connect → Generate → Download)
-- Pricing information (free tier + premium features)
-- Call-to-action buttons (Get Started, View Examples)
-- Footer with links, social media, and legal pages
-
-#### 4.4 Authentication Pages
-**Login Page (`/auth/signin`)**
-- GitHub OAuth sign-in button
-- "Remember me" checkbox
-- Link to register page
-- Link to forgot password
-- Terms of service and privacy policy links
-- Demo mode option for testing
-
-**Register Page (`/auth/signup`)**
-- GitHub OAuth sign-up button
-- Email collection (optional for notifications)
-- Terms of service acceptance checkbox
-- Privacy policy acknowledgment
-- Link to login page
-- Account type selection (Personal/Organization)
-
-**Forgot Password Page (`/auth/forgot-password`)**
-- Email input field
-- Send reset link button
-- Back to login link
-- Password reset instructions
-- Security notice about GitHub OAuth
-
-#### 4.5 Dashboard (`/dashboard`)
-**Content Requirements:**
-- Welcome message with user's GitHub username/avatar
-- GitHub App installation status card
-- Quick actions section:
-  - "Generate New README" button
-  - "Browse Repositories" button
-  - "View History" button
-- Recent activity feed (last 5 generation jobs)
-- Repository access status overview
-- Quick stats (total READMEs generated, success rate)
-- Navigation sidebar with main sections
-
-#### 4.6 Account Settings (`/settings`)
-**Content Requirements:**
-- Profile section:
-  - GitHub profile information (read-only)
-  - Display name customization
-  - Avatar display
-- Notification preferences:
-  - Email notifications toggle
-  - Job completion notifications
-  - Weekly digest option
-- GitHub App management:
-  - Installation status per organization
-  - Reinstall/update app buttons
-  - Permission overview
-- Account actions:
-  - Export data option
-  - Delete account button
-  - Sign out button
-- Billing section (for future premium features)
-
-#### 4.7 Repository Management UI
-- [ ] Create repository selection interface (`/repositories`)
-- [ ] Build installation status indicators
-- [ ] Implement repository access validation UI
-- [ ] Add repository browsing and search functionality
-- [ ] Create repository details modal/page
-
-#### 4.8 Additional Pages
-
-**Repository Selection (`/repositories`)**
-- List of accessible repositories (personal + organizations)
-- Search and filter functionality
-- Installation status indicators
-- Repository metadata (language, stars, last updated)
-- "Generate README" action buttons
-
-**Generate README (`/generate`)**
-- Repository selection dropdown/search
-- Generation options:
-  - Template selection (Standard, Minimal, Comprehensive)
-  - Include/exclude sections toggle
-  - Custom instructions textarea
-- Preview of selected repository structure
-- Generate button with progress indicator
-
-**Job Status (`/jobs/[id]`)**
-- Real-time job progress updates
-- Repository information and commit SHA
-- Generation options used
-- Progress bar and status messages
-- Cancel job option (if still running)
-- Download result button (when complete)
-- Error details (if failed)
-
-**Job History (`/history`)**
-- Paginated list of all generation jobs
-- Filter by status, date, repository
-- Search functionality
-- Job details modal
-- Bulk actions (download, delete)
-- Export history option
-
-**Help & Documentation (`/help`)**
-- Getting started guide
-- GitHub App installation instructions
-- FAQ section
-- Troubleshooting guide
-- Contact support form
-- API documentation (for future)
-
-**Legal Pages**
-- Terms of Service (`/terms`)
-- Privacy Policy (`/privacy`)
-- Cookie Policy (`/cookies`)
-- Data Processing Agreement (`/dpa`)
-
-#### 4.9 Job Management Interface
-- [ ] Design job creation form (`/generate`)
-- [ ] Build job status tracking interface (`/jobs/[id]`)
-- [ ] Create job history and results viewer (`/history`)
-- [ ] Implement download and copy functionality
-- [ ] Add job comparison and diff features
-
-### Phase 5: README Generation Pipeline
-**Duration**: 2-3 weeks
-
-#### 5.1 LLM Integration
-- [ ] Set up Open WebUI backend connection
-- [ ] Implement DeepSeek-R1 model integration
-- [ ] Create prompt engineering for README generation
-- [ ] Add model response parsing and validation
-
-#### 5.2 Code Analysis Engine
-- [ ] Implement repository structure analysis
-- [ ] Create code file type detection
-- [ ] Build dependency and technology detection
-- [ ] Add code quality and complexity metrics
-
-#### 5.3 README Template System
-- [ ] Design comprehensive README template
-- [ ] Implement dynamic section generation
-- [ ] Create markdown formatting and styling
-- [ ] Add customizable template options
-
-#### 5.4 Asynchronous Processing
-- [ ] Set up job queue system (Redis/Bull)
-- [ ] Implement background job processing
-- [ ] Add progress tracking and status updates
-- [ ] Create job retry and error handling
-
-### Phase 6: Email Notifications & Job Management
-**Duration**: 1-2 weeks
-
-#### 6.1 Email Service Integration
-- [ ] Set up email service provider (SendGrid/SES)
-- [ ] Create email templates for notifications
-- [ ] Implement job completion notifications
-- [ ] Add email preferences and settings
-
-#### 6.2 Advanced Job Features
-- [ ] Implement job scheduling and queuing
-- [ ] Add job priority and resource management
-- [ ] Create job analytics and reporting
-- [ ] Build job cleanup and archival
-
-#### 6.3 User Experience Enhancements
-- [ ] Add real-time job status updates
-- [ ] Implement job progress indicators
-- [ ] Create job comparison and diff features
-- [ ] Add bulk operations and batch processing
-
-### Phase 7: Production Deployment & Monitoring
-**Duration**: 1-2 weeks
-
-#### 7.1 Production Environment Setup
-- [ ] Configure production database (Neon)
-- [ ] Set up production GitHub App
-- [ ] Configure environment variables and secrets
-- [ ] Implement security best practices
-
-#### 7.2 Deployment Pipeline
-- [ ] Set up CI/CD pipeline (GitHub Actions)
-- [ ] Configure automated testing
-- [ ] Implement database migrations
-- [ ] Set up staging environment
-
-#### 7.3 Monitoring & Analytics
-- [ ] Implement application monitoring (Sentry)
-- [ ] Add performance metrics and logging
-- [ ] Set up error tracking and alerting
-- [ ] Create user analytics and usage tracking
-
-#### 7.4 Documentation & Launch
-- [ ] Create comprehensive documentation
-- [ ] Write API documentation
-- [ ] Create user guides and tutorials
-- [ ] Prepare launch and marketing materials
-
-## 🔧 Development Setup
 
 ### Prerequisites
-- Node.js 18+ and pnpm
-- PostgreSQL database (Neon recommended)
-- GitHub App credentials
-- Email service provider account
+
+Before you begin, ensure you have the following installed:
+- Node.js (v18.x or later recommended)
+- pnpm
+- PostgreSQL database
+- GitHub Account
+- OpenAI (or equivalent LLM) API Key
+
+
+### Clone the Repository
+
+First, clone the `clio` repository to your local machine:
+
+```bash
+git clone https://github.com/your-username/clio.git
+cd clio
+```
+
+
+### Install Dependencies
+
+`clio` uses `pnpm` as its package manager. Install all required dependencies:
+
+```bash
+pnpm install
+```
+
 
 ### Environment Variables
 
-Create a `.env.local` file in your project root by copying `.env.example`:
+Copy the example environment file and fill in the necessary details.
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Then fill in your actual values. Here's what you need to set up:
+You will need to configure the following environment variables in your `.env` file:
+- **Database:**
+- `DATABASE_URL`: Your PostgreSQL connection string (e.g., `postgresql://user:password@host:port/database?schema=public`).
+- **NextAuth.js (for user authentication):**
+- `NEXTAUTH_SECRET`: A long, random string used to sign NextAuth.js session cookies. You can generate one using `openssl rand -base64 32`.
+- `GITHUB_ID`: Your GitHub OAuth App Client ID.
+- `GITHUB_SECRET`: Your GitHub OAuth App Client Secret.
+- **GitHub App (for repository integration):**
+- `GITHUB_APP_ID`: The ID of your GitHub App.
+- `GITHUB_PRIVATE_KEY`: The private key of your GitHub App. This should be the *content* of the `.pem` file, encoded into a single line or read from `src/lib/github-private-key.pem`. For `.env`, it's recommended to store it as a base64 encoded string or directly read the file from `src/lib/github-private-key.pem` if possible, but for simplicity, directly pasting the key content (with newlines replaced) is often done.
+- `GITHUB_WEBHOOK_SECRET`: A secret token used to secure your GitHub App webhooks.
+- `GITHUB_APP_CLIENT_ID`: The Client ID of your GitHub App (used for authentication flow).
+- `GITHUB_APP_CLIENT_SECRET`: The Client Secret of your GitHub App.
+- **AI/LLM Service:**
+- `OPENAI_API_KEY`: Your API key for the chosen LLM service (e.g., OpenAI).
 
-#### **Required for Development**
+Example `.env` structure:
 
-1. **Database (Neon PostgreSQL)**:
-   - Sign up at [neon.tech](https://neon.tech)
-   - Create a new project
-   - Copy the connection string to `DATABASE_URL`
+```env
 
-2. **GitHub OAuth App**:
-   - Go to [GitHub Settings > Developer settings > OAuth Apps](https://github.com/settings/applications/new)
-   - Create new OAuth App
-   - Set Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
-   - Copy Client ID → `AUTH_GITHUB_ID`
-   - Copy Client Secret → `AUTH_GITHUB_SECRET`
-
-3. **GitHub App** (for repository access):
-   - Go to [GitHub Settings > Developer settings > GitHub Apps](https://github.com/settings/apps/new)
-   - Create new GitHub App with these permissions:
-     - Repository: Contents (Read), Metadata (Read)
-     - Account: Email addresses (Read)
-   - Set webhook URL: `http://localhost:3000/api/github/webhook`
-   - Copy App ID → `GITHUB_APP_ID`
-   - Download private key → `GITHUB_PRIVATE_KEY`
-   - Generate webhook secret → `GITHUB_WEBHOOK_SECRET`
-
-4. **Email Service** (EmailJS):
-   - Sign up at [emailjs.com](https://emailjs.com)
-   - Create an email service (Gmail, Outlook, etc.)
-   - Create email templates for notifications
-   - Copy Service ID → `EMAILJS_SERVICE_ID`
-   - Copy Template ID → `EMAILJS_TEMPLATE_ID`
-   - Copy Public Key → `EMAILJS_PUBLIC_KEY`
-   - Set sender email → `EMAIL_FROM`
-
-5. **Google Gemini API**:
-   - Get API key from [Google AI Studio](https://aistudio.google.com/)
-   - Set API key → `GEMINI_API_KEY`
-   - Choose model → `GEMINI_MODEL` (default: gemini-2.5-flash)
-
-#### **Environment Variables Overview**
-```bash
 # Database
-DATABASE_URL="postgresql://..."
+DATABASE_URL="postgresql://user:password@localhost:5432/clio?schema=public"
+
 
 # NextAuth.js
-AUTH_SECRET="your-super-secret-key-min-32-chars"
-NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="YOUR_NEXTAUTH_SECRET"
+GITHUB_ID="YOUR_GITHUB_OAUTH_CLIENT_ID"
+GITHUB_SECRET="YOUR_GITHUB_OAUTH_CLIENT_SECRET"
 
-# GitHub OAuth (NextAuth.js Provider)
-AUTH_GITHUB_ID="your-github-oauth-client-id"
-AUTH_GITHUB_SECRET="your-github-oauth-client-secret"
 
-# GitHub App (Repository Access)
-GITHUB_APP_ID="123456"
-GITHUB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
-GITHUB_WEBHOOK_SECRET="your-webhook-secret"
+# GitHub App Configuration
+GITHUB_APP_ID="YOUR_GITHUB_APP_ID"
+GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----" # Ensure newlines are correctly handled if not reading from file
+GITHUB_WEBHOOK_SECRET="YOUR_GITHUB_WEBHOOK_SECRET"
+GITHUB_APP_CLIENT_ID="YOUR_GITHUB_APP_CLIENT_ID_FOR_OAUTH_FLOW"
+GITHUB_APP_CLIENT_SECRET="YOUR_GITHUB_APP_CLIENT_SECRET_FOR_OAUTH_FLOW"
 
-# Email Service (EmailJS)
-EMAILJS_SERVICE_ID="your-service-id"
-EMAILJS_TEMPLATE_ID="your-template-id"
-EMAILJS_PUBLIC_KEY="your-public-key"
-EMAIL_FROM="noreply@yourdomain.com"
 
-# Google Gemini API
-GEMINI_API_KEY="your-gemini-api-key"
-GEMINI_MODEL="gemini-2.5-flash"
+# LLM Service
+OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
 
-# Development (Optional)
-NODE_ENV="development"
-SKIP_ENV_VALIDATION="false"
-DEBUG="clio:*"
+
+# Next.js Public URL
+NEXT_PUBLIC_APP_URL="http://localhost:3000" # Or your deployed URL
 ```
 
-#### **Redis (Optional - Only for Production Job Queue)**
-Redis is only needed if you want to implement a proper job queue system for production. For development and small-scale usage, you can:
 
-- **Skip Redis**: Use simple database-based job processing
-- **Add Redis later**: When you need horizontal scaling and advanced job management
+### Database Setup
 
-**When you need Redis:**
-- Multiple server instances
-- Advanced job scheduling and retry logic
-- Job priority management
-- Real-time job progress updates
-- High-volume README generation
+Run Prisma migrations to set up your database schema:
 
-**For now, you can skip Redis and use:**
-- Database-based job processing
-- Simple async/await patterns
-- File-based job status tracking
-
-### Getting Started
 ```bash
-# Install dependencies
-pnpm install
+pnpm prisma migrate dev --name initial_clio_schema
+pnpm prisma generate
+```
 
-# Set up database
-pnpm db:push
+This will apply the migrations defined in `prisma/migrations` and generate the Prisma client.
 
-# Start development server
+
+### GitHub App Setup
+
+1.  **Create a GitHub App**: Go to your GitHub settings, then "Developer settings" > "GitHub Apps" > "New GitHub App".
+2.  **Configure App Details**:
+- **GitHub App name**: e.g., `Clio Dev`
+- **Homepage URL**: `http://localhost:3000` (or your deployment URL)
+- **User authorization callback URL**: `http://localhost:3000/api/auth/callback/github`
+- **Webhook URL**: `http://localhost:3000/api/github/webhook`
+- **Webhook secret**: Generate a secure secret and save it in your `.env` as `GITHUB_WEBHOOK_SECRET`.
+3.  **Permissions**:
+- **Repository Permissions**:
+- `Contents`: Read & write
+- `Metadata`: Read-only
+- **Organization Permissions**: (if you want to install on organizations)
+- `Members`: Read-only
+4.  **Subscribe to Events**:
+- `Push`
+- `Installation`
+- `Installation repositories`
+5.  **Generate Private Key**: Generate a new private key and download the `.pem` file. The *contents* of this file go into `GITHUB_PRIVATE_KEY` in your `.env`.
+6.  **Get App ID & Client ID/Secret**: Note down your GitHub App ID, Client ID, and Client Secret from the App settings page and add them to your `.env` file.
+
+
+### Run the Development Server
+
+Once everything is configured, start the development server:
+
+```bash
 pnpm dev
 ```
 
-## 📋 Current Status
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-- ✅ Project initialized with T3 Stack
-- ✅ Basic Next.js setup with TypeScript
-- ✅ Prisma configured with PostgreSQL
-- ✅ Tailwind CSS and styling setup
-- 🔄 Development roadmap created
-- ⏳ Phase 1: Authentication setup (Next)
+
+## 💡 Usage
+
+Once `clio` is running, you can begin generating `README.md` files.
+
+
+### Authentication
+
+Navigate to the `clio` homepage. You will be prompted to log in with your GitHub account. `clio` uses NextAuth.js for secure authentication.
+
+
+### Install GitHub App
+
+After logging in, you'll be directed to the dashboard. To allow `clio` to access your repositories, you need to install the GitHub App you configured during setup. Click the "Install GitHub App" button and follow the prompts to grant `clio` access to the repositories you wish to document.
+
+
+### Generate a README
+
+1.  **Select Repositories**: From the dashboard, you will see a list of your accessible GitHub repositories.
+2.  **Initiate Generation**: Select the repository for which you want to generate a README and initiate the generation process. `clio` will analyze the repository's code, file structure, and existing documentation.
+3.  **Review and Customize**: After the AI generates the initial README, you will have an opportunity to review the content, suggest edits, and customize sections to fit your project's unique requirements.
+4.  **Publish**: Once satisfied, publish the README directly to your GitHub repository. `clio` will create a pull request or directly commit the new `README.md` file.
+
+
+### Monitoring Jobs
+
+The "History" or "Jobs" section in the navigation allows you to view the status and details of all your past and ongoing README generation tasks. You can track progress, review outputs, and re-run jobs as needed.
+
+
+## API Endpoints
+
+`clio` exposes both tRPC procedures for internal frontend-backend communication and standard Next.js API routes for external interactions like GitHub webhooks.
+
+
+### tRPC API
+
+The tRPC API is located under `src/server/api/routers`. It defines the procedures used by the `clio` frontend to interact with the backend logic, including:
+- **`github` router**: Procedures for managing GitHub installations, fetching repositories, triggering syncs, and initiating README generation jobs.
+- **`readme` router**: Procedures for interacting with README generation jobs, viewing status, and retrieving results.
+
+You can explore the definitions in `src/server/api/routers/github.ts` and `src/server/api/routers/readme.ts` for specific available procedures and their inputs/outputs.
+
+
+### Next.js API Routes
+
+These are standard HTTP API routes designed for specific tasks:
+- **`src/app/api/auth/[...nextauth]/route.ts`**: Handles authentication callbacks and sessions via NextAuth.js.
+- **`src/app/api/auth/setup/route.ts`**: Likely handles initial setup or configuration related to authentication.
+- **`src/app/api/github/install/route.ts`**: Manages the installation process of the GitHub App into user accounts/organizations.
+- **`src/app/api/github/sync-installation/route.ts`**: Synchronizes repository data after a GitHub App installation or update.
+- **`src/app/api/github/sync/route.ts`**: Triggers a synchronization of a specific repository's data.
+- **`src/app/api/github/webhook/route.ts`**: The primary endpoint for receiving and processing GitHub App webhook events (e.g., `push`, `installation`, `installation_repositories`).
+
+
+## ⚙️ Configuration
+
+Beyond environment variables, `clio` uses several configuration files for various tools.
+
+
+### Code Formatting & Linting
+
+`clio` uses [Biome](https://biomejs.dev/) for robust code formatting and linting.
+- **`biome.json`**: Configures Biome rules for TypeScript, JSON, and Markdown files, ensuring consistent code style and quality across the project.
+
+
+### UI Components
+
+`clio` leverages [shadcn/ui](https://ui.shadcn.com/) for its component library.
+- **`components.json`**: This file is used by the `shadcn/ui` CLI to configure component imports and styling.
+
 
 ## 🤝 Contributing
 
-This project is in active development. Please refer to the development roadmap above for current priorities and upcoming features.
+We welcome contributions to `clio`! If you're interested in improving the platform, please follow these guidelines.
+
+
+### Local Development Setup
+
+Ensure you have followed the [Installation](#installation) steps completely.
+
+1.  **Fork the repository**: Fork `clio` to your GitHub account.
+2.  **Create a new branch**:
+    ```bash
+git checkout -b feature/your-feature-name
+```
+3.  **Make your changes**: Implement your feature or bug fix. Ensure your code adheres to the project's coding style (enforced by Biome).
+4.  **Run tests (if any)**:
+    ```bash
+
+# Placeholder for test command, if applicable
+    # pnpm test
+```
+5.  **Format and lint**: Before committing, ensure your code is properly formatted and linted:
+    ```bash
+pnpm biome format --write ./src
+    pnpm biome lint --apply ./src
+```
+
+
+### Submitting Changes
+
+1.  **Commit your changes**: Write clear and descriptive commit messages.
+    ```bash
+git commit -m "feat: Add new awesome feature"
+```
+2.  **Push to your fork**:
+    ```bash
+git push origin feature/your-feature-name
+```
+3.  **Create a Pull Request**: Open a pull request from your forked repository to the `main` branch of the `clio` repository. Provide a detailed description of your changes.
+
 
 ## 📄 License
 
-[Add your license here]
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
----
+```
+MIT License
 
-*Built with ❤️ using the T3 Stack*
+Copyright (c) 2023 Your Name or Organization
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+
+## ❓ Support
+
+If you encounter any issues or have questions, please feel free to:
+- **Open an issue** on the GitHub repository.
+- **Start a discussion** on the GitHub repository for broader questions or ideas.
+
+We're here to help!
