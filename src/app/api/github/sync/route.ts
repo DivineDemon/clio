@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
           installationId: installationId,
         });
         createdRepos++;
-      } catch (_error) {
+      } catch {
         logger.debug("Repository already exists, skipping", {
           repository: repo.fullName,
         });

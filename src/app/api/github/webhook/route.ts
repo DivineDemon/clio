@@ -169,7 +169,7 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
 }
 
 async function handleInstallationRepositoriesEvent(payload: GitHubInstallationRepositoriesEventPayload) {
-  const { action: _action, installation, repositories_added, repositories_removed } = payload;
+  const { installation, repositories_added, repositories_removed } = payload;
 
   try {
     const installationDetails = await fetchInstallationDetails(

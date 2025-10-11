@@ -35,7 +35,7 @@ export default function RepositoryList() {
     privacy: "all",
     sortBy: "name",
   });
-  const [_selectedRepo, setSelectedRepo] = useState<{
+  const [_, setSelectedRepo] = useState<{
     id: string;
     name: string;
     fullName: string;
@@ -80,7 +80,7 @@ export default function RepositoryList() {
   });
 
   const syncInstallation = api.github.syncInstallation.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Sync successful");
       refetchInstallation();
       refetchRepos();
@@ -92,11 +92,7 @@ export default function RepositoryList() {
     },
   });
 
-  const {
-    data: activeJobs,
-    error: _activeJobsError,
-    isLoading: _activeJobsLoading,
-  } = api.readme.getActiveJobs.useQuery(undefined, {
+  const { data: activeJobs } = api.readme.getActiveJobs.useQuery(undefined, {
     refetchInterval: 2000,
     refetchIntervalInBackground: true,
   });
@@ -131,7 +127,7 @@ export default function RepositoryList() {
 
     setIsSyncing(true);
     try {
-      const _result = await syncInstallation.mutateAsync({
+      await syncInstallation.mutateAsync({
         installationId: installationStatus.installationId.toString(),
       });
       toast.success("Sync completed successfully");
@@ -152,7 +148,7 @@ export default function RepositoryList() {
 
     setIsSyncing(true);
     try {
-      const _result = await syncInstallation.mutateAsync({
+      await syncInstallation.mutateAsync({
         installationId: installationStatus.installationId.toString(),
       });
       toast.success("Sync completed successfully");

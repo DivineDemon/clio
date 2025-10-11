@@ -186,7 +186,7 @@ export class ContentAnalyzer {
             language: this.getLanguageFromExtension(item.path),
             importance: this.getFileImportance(item.path),
           });
-        } catch (_error) {
+        } catch {
           logger.warn("Failed to get content for file", {
             filePath: item.path,
           });
@@ -214,7 +214,7 @@ export class ContentAnalyzer {
       }
 
       return "";
-    } catch (_error) {
+    } catch {
       logger.warn("Error getting file content", { filePath: path });
       return "";
     }
@@ -231,7 +231,7 @@ export class ContentAnalyzer {
 
     try {
       return JSON.parse(packageFile.content);
-    } catch (_error) {
+    } catch {
       logger.warn("Failed to parse package.json", {
         repository: `${owner}/${repo}`,
       });

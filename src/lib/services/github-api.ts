@@ -63,7 +63,7 @@ export async function fetchInstallationDetails(
       suspendedBy: installation.suspended_by?.id || null,
       suspendedByLogin: installation.suspended_by?.login || null,
     };
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -99,7 +99,7 @@ export async function fetchRepositoryDetails(owner: string, repo: string): Promi
       githubCreatedAt: new Date(repository.created_at),
       githubUpdatedAt: new Date(repository.updated_at),
     };
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -114,7 +114,7 @@ export async function isRepositoryManaged(
       isManaged: installationId !== null,
       installationId: installationId || undefined,
     };
-  } catch (_error) {
+  } catch {
     return { isManaged: false };
   }
 }
@@ -158,7 +158,7 @@ export async function getInstallationRepositories(
       githubCreatedAt: new Date(repo.created_at || new Date()),
       githubUpdatedAt: new Date(repo.updated_at || new Date()),
     }));
-  } catch (_error) {
+  } catch {
     return [];
   }
 }

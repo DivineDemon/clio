@@ -111,7 +111,7 @@ export class ReadmeGenerator {
       const contentHash = this.generateContentHash(processedContent);
 
       await updateReadmeJob(jobId, { progress: 90 });
-      const _version = await createReadmeVersion({
+      await createReadmeVersion({
         jobId,
         content: processedContent,
         contentHash,
@@ -194,7 +194,7 @@ export class ReadmeGenerator {
       const contentHash = this.generateContentHash(processedContent);
 
       await updateReadmeJob(job.id, { progress: 90 });
-      const _version = await createReadmeVersion({
+      await createReadmeVersion({
         jobId: job.id,
         content: processedContent,
         contentHash,

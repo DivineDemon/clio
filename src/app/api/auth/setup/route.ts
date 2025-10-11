@@ -181,7 +181,7 @@ async function handleInstallationUpdate(installationId: number) {
           userId: installationDetails.accountId.toString(),
           installationId: installationId.toString(),
         });
-      } catch (_error) {
+      } catch {
         logger.debug("Repository already exists, skipping creation", {
           repository: repo.fullName,
         });

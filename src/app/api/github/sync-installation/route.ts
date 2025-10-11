@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { findUserInstallation } from "@/lib/github-installations";
 import { logger } from "@/lib/logger";
@@ -6,7 +6,7 @@ import { fetchInstallationDetails, getInstallationRepositories } from "@/lib/ser
 import { createInstallation, getInstallationByInstallationId } from "@/lib/services/github-installation";
 import { createRepository } from "@/lib/services/repository";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
           installationId: installationId.toString(),
         });
         createdRepos++;
-      } catch (_error) {
+      } catch {
         logger.debug("Repository already exists, skipping", {
           repository: repo.fullName,
         });
