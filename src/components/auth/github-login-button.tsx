@@ -8,11 +8,12 @@ import { Button } from "../ui/button";
 interface GithubLoginButtonProps {
   className?: string;
   children?: React.ReactNode;
+  size?: "sm" | "lg" | "default" | "icon";
 }
 
-const GithubLoginButton = ({ className, children }: GithubLoginButtonProps) => {
+const GithubLoginButton = ({ size, className, children }: GithubLoginButtonProps) => {
   return (
-    <Button type="button" onClick={login} className={cn("w-auto", className)}>
+    <Button size={size} type="button" onClick={login} className={cn("w-auto", className)}>
       {children || "Sign in with GitHub"}
     </Button>
   );

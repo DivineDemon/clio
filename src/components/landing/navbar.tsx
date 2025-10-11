@@ -1,15 +1,38 @@
+"use client";
+
+import { motion } from "motion/react";
 import Image from "next/image";
 import Logo from "@/assets/img/clio.png";
-import { Button } from "../ui/button";
+import GithubLoginButton from "../auth/github-login-button";
 
 const Navbar = () => {
   return (
-    <nav className="fixed inset-x-0 top-5 z-[1] mx-auto flex w-full max-w-screen-lg items-center justify-between rounded-full border border-primary/50 bg-black/10 pr-3 shadow backdrop-blur-sm">
-      <Image src={Logo} alt="logo" width={100} height={100} className="w-20" />
-      <Button size="sm" variant="default" className="rounded-full">
-        Get Started
-      </Button>
-    </nav>
+    <motion.nav
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{
+        type: "spring",
+        stiffness: 100,
+        damping: 20,
+        delay: 0.2,
+      }}
+      className="fixed inset-x-0 top-5 z-[2] mx-auto flex w-[90%] max-w-screen-lg items-center justify-between rounded-full border border-primary/50 bg-black/10 pr-3 shadow backdrop-blur-sm md:w-[95%] xl:w-full"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.4, duration: 0.3 }}
+      >
+        <Image src={Logo} alt="logo" width={100} height={100} className="w-20" />
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, duration: 0.3 }}
+      >
+        <GithubLoginButton size="sm" className="rounded-full" />
+      </motion.div>
+    </motion.nav>
   );
 };
 
