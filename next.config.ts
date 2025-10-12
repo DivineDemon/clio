@@ -8,6 +8,10 @@ const config = {
         hostname: "avatars.githubusercontent.com",
         protocol: "https",
       },
+      {
+        hostname: "i.pravatar.cc",
+        protocol: "https",
+      },
     ],
   },
 };

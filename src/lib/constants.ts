@@ -115,3 +115,62 @@ const backend = {
 ![Profile Views](https://komarev.com/ghpvc/?username=DivineDemon&color=blueviolet&style=for-the-badge)
 
 </div>`;
+
+export interface Testimonial {
+  id: number;
+  name: string;
+  username: string;
+  avatar: string;
+  content: string;
+}
+
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    id: 1,
+    name: "Sarah Chen",
+    username: "@sarahcodes",
+    avatar: "https://i.pravatar.cc/150?img=5",
+    content:
+      "Clio saved me hours on documentation! The AI perfectly captured my project's essence and generated a README that actually makes sense. Worth every penny of that $5.",
+  },
+  {
+    id: 2,
+    name: "Marcus Johnson",
+    username: "@marcusdev",
+    avatar: "https://i.pravatar.cc/150?img=12",
+    content:
+      "I was skeptical at first, but Clio blew me away. It analyzed my codebase and created a professional README with installation steps, usage examples, and even a roadmap. Game changer!",
+  },
+  {
+    id: 3,
+    name: "Priya Sharma",
+    username: "@priyabuilds",
+    avatar: "https://i.pravatar.cc/150?img=9",
+    content:
+      "As someone who hates writing docs, Clio is a lifesaver. The generated README was so good, I barely had to edit it. My GitHub stars doubled after updating my docs!",
+  },
+  {
+    id: 4,
+    name: "Alex Rivera",
+    username: "@alexcodes",
+    avatar: "https://i.pravatar.cc/150?img=33",
+    content:
+      "Best $5 I've spent on dev tools. Clio understood my Python project structure and created comprehensive documentation including API references. Highly recommend!",
+  },
+  {
+    id: 5,
+    name: "Emma Watson",
+    username: "@emmaweb",
+    avatar: "https://i.pravatar.cc/150?img=45",
+    content:
+      "Clio's AI is incredibly smart. It picked up on my project's unique features and highlighted them beautifully in the README. My team is now using it for all our repos.",
+  },
+  {
+    id: 6,
+    name: "David Kim",
+    username: "@davebuilds",
+    avatar: "https://i.pravatar.cc/150?img=14",
+    content:
+      "I've tried other README generators, but Clio is in a league of its own. The quality is outstanding, and the pay-per-use model is perfect for freelancers like me.",
+  },
+];

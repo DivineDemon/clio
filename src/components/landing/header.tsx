@@ -14,16 +14,16 @@ const Header = () => {
   const [render, setRender] = useState<boolean>(false);
 
   return (
-    <header className="mx-auto flex h-screen w-full max-w-screen-lg flex-col items-center justify-center">
+    <header className="relative mx-auto flex h-screen w-full max-w-screen-lg flex-col items-start justify-start">
       <div className="mx-auto flex h-[calc(100vh-400px)] w-full max-w-screen-lg flex-col items-center justify-end pb-10 md:pb-5 xl:justify-center xl:pb-0">
-        <motion.span
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="mx-auto mb-5 rounded-full bg-primary/50 px-5 py-2 text-[12px] text-secondary leading-[12px]"
+          className="mb-5 inline-flex items-center rounded-full border border-transparent bg-secondary px-4 py-1.5 font-medium text-secondary-foreground text-sm shadow-sm transition-none"
         >
-          AI README Generator
-        </motion.span>
+          <span className="mr-1 text-primary">✦</span>&nbsp;AI README Generator
+        </motion.div>
         <div id="title" className="relative mb-10 w-full md:mb-14">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -31,7 +31,7 @@ const Header = () => {
             transition={{ delay: 0.5, duration: 0.6 }}
             className="relative z-[1] w-full text-center font-medium text-[36px] leading-[46px] tracking-tight md:text-[60px] md:leading-[70px]"
           >
-            Let <span className="text-secondary">Clio</span> tell your
+            Let <span className="text-secondary text-shadow-primary">Clio</span> tell your
             <br /> project&apos;s
             <span className="text-primary">&nbsp;story</span>
           </motion.p>
@@ -64,7 +64,7 @@ const Header = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.1, duration: 0.6 }}
-        className="relative h-[400px] w-full overflow-hidden rounded-t-2xl px-5 pt-5 backdrop-blur-md xl:bg-secondary/10"
+        className="absolute top-[calc(100vh-400px)] h-[800px] w-full overflow-hidden rounded-2xl p-5 backdrop-blur-md xl:bg-primary/50 xl:dark:bg-secondary/10"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -88,10 +88,11 @@ const Header = () => {
               <MDEditor.Markdown
                 source={SAMPLE_TWO}
                 style={{
+                  height: "760px",
                   padding: "20px",
+                  overflow: "hidden",
+                  borderRadius: "16px",
                   backgroundColor: "#011627",
-                  borderTopLeftRadius: "16px",
-                  borderTopRightRadius: "16px",
                 }}
               />
             </motion.div>
@@ -102,13 +103,14 @@ const Header = () => {
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               exit={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="h-[760px]"
             >
               <Image
                 src={SampleOne}
                 alt="sample-one"
                 width={1000}
                 height={1000}
-                className="h-full w-full rounded-t-2xl object-cover object-top"
+                className="h-full w-full rounded-2xl object-cover object-top"
               />
             </motion.div>
           )}
