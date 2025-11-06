@@ -30,7 +30,7 @@ const Testimonials = () => {
   return (
     <div className="relative flex h-screen w-full flex-col items-end justify-end gap-2.5">
       <div className="absolute inset-0 overflow-hidden">
-        <Image src={Dotted} alt="dotted" className="h-full w-full object-cover opacity-20" />
+        <Image src={Dotted} alt="dotted" className="h-full w-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_10%,_var(--background)_75%)]" />
       </div>
       <div className="z-[2] mx-auto flex w-full max-w-screen-lg flex-col items-start justify-start gap-5 p-5">
