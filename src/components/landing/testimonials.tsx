@@ -4,6 +4,7 @@ import { Quote } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import Dotted from "@/assets/img/dotted.svg";
 import { TESTIMONIALS } from "@/lib/constants";
 
 const Testimonials = () => {
@@ -27,8 +28,12 @@ const Testimonials = () => {
   }, []);
 
   return (
-    <div className="flex h-screen w-full flex-col items-end justify-end gap-2.5">
-      <div className="z-[1] mx-auto flex w-full max-w-screen-lg flex-col items-start justify-start gap-5 p-5">
+    <div className="relative flex h-screen w-full flex-col items-end justify-end gap-2.5">
+      <div className="absolute inset-0 overflow-hidden">
+        <Image src={Dotted} alt="dotted" className="h-full w-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_10%,_var(--background)_75%)]" />
+      </div>
+      <div className="z-[2] mx-auto flex w-full max-w-screen-lg flex-col items-start justify-start gap-5 p-5">
         {TESTIMONIALS.slice(0, itemsToShow).map((testimonial, index) => (
           <motion.div
             key={testimonial.id}

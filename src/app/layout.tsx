@@ -20,8 +20,8 @@ const libre_baskerville = Libre_Baskerville({
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${libre_baskerville.variable}`}>
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${libre_baskerville.variable}`}>
         <Providers>
           <TRPCReactProvider>{children}</TRPCReactProvider>
         </Providers>

@@ -1,3 +1,6 @@
+import { Activity, Brain, Github, type LucideProps, RefreshCw, Settings, Sparkles } from "lucide-react";
+import { type ForwardRefExoticComponent, type RefAttributes } from "react";
+
 export const SAMPLE_TWO = `# 👋 Hey, I'm Mushood Hanif!
 
 <div align="center">
@@ -123,6 +126,58 @@ export interface Testimonial {
   avatar: string;
   content: string;
 }
+
+export interface Feature {
+  id: number;
+  icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+  title: string;
+  description: string;
+}
+
+export const FEATURES: Feature[] = [
+  {
+    id: 1,
+    icon: Brain,
+    title: "AI-Powered Analysis",
+    description:
+      "Intelligent code analysis that understands your project structure, dependencies, and key features to generate comprehensive documentation.",
+  },
+  {
+    id: 2,
+    icon: Github,
+    title: "Seamless GitHub Integration",
+    description:
+      "Connect directly with your GitHub repositories. Clio automatically syncs your projects and commits READMEs with proper version control.",
+  },
+  {
+    id: 3,
+    icon: Activity,
+    title: "Real-time Job Tracking",
+    description:
+      "Monitor your README generation progress in real-time. Track status, view outputs, and manage all your documentation jobs from one dashboard.",
+  },
+  {
+    id: 4,
+    icon: Settings,
+    title: "Customizable Output",
+    description:
+      "Fine-tune generated READMEs to match your project's style. Edit sections, add custom content, and personalize before publishing.",
+  },
+  {
+    id: 5,
+    icon: RefreshCw,
+    title: "Automatic Updates",
+    description:
+      "Keep your documentation up-to-date automatically. Clio can regenerate READMEs when your codebase changes, ensuring docs never go stale.",
+  },
+  {
+    id: 6,
+    icon: Sparkles,
+    title: "Professional Quality",
+    description:
+      "Generate publication-ready READMEs with proper formatting, badges, code examples, and best practices that impress developers and users.",
+  },
+];
 
 export const TESTIMONIALS: Testimonial[] = [
   {

@@ -17,7 +17,7 @@ const Navbar = () => {
         damping: 20,
         delay: 0.2,
       }}
-      className="fixed inset-x-0 top-5 z-[2] mx-auto flex w-[90%] max-w-screen-lg items-center justify-between rounded-full border border-primary/50 bg-primary/50 pr-3 shadow backdrop-blur-sm md:w-[95%] xl:w-full dark:bg-black/10"
+      className="fixed inset-x-0 top-5 z-[3] mx-auto flex w-[90%] max-w-screen-lg items-center justify-between rounded-full border border-primary/50 bg-primary/50 pr-3 shadow backdrop-blur-sm md:w-[95%] xl:w-full dark:bg-black/10"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
