@@ -93,6 +93,12 @@ export async function updateReadmeJob(id: string, data: UpdateReadmeJobData): Pr
   });
 }
 
+export async function deleteReadmeJob(id: string): Promise<void> {
+  await db.readmeJob.delete({
+    where: { id },
+  });
+}
+
 export async function createReadmeVersion(data: CreateReadmeVersionData): Promise<ReadmeVersion> {
   return await db.readmeVersion.create({
     data: {

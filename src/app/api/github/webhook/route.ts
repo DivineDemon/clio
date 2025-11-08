@@ -57,11 +57,7 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
   const { action, installation } = payload;
 
   try {
-    const installationDetails = await fetchInstallationDetails(
-      installation.id,
-      installation.account.login,
-      "dummy-repo",
-    );
+    const installationDetails = await fetchInstallationDetails(installation.id);
 
     if (!installationDetails) {
       logger.error("Failed to fetch installation details", undefined, {
@@ -83,11 +79,7 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
           userId: installationDetails.accountId.toString(),
         });
 
-        const repositories = await getInstallationRepositories(
-          installation.id,
-          installationDetails.accountLogin,
-          "dummy-repo",
-        );
+        const repositories = await getInstallationRepositories(installation.id);
 
         for (const repo of repositories) {
           await createRepository({
@@ -172,11 +164,7 @@ async function handleInstallationRepositoriesEvent(payload: GitHubInstallationRe
   const { installation, repositories_added, repositories_removed } = payload;
 
   try {
-    const installationDetails = await fetchInstallationDetails(
-      installation.id,
-      installation.account.login,
-      "dummy-repo",
-    );
+    const installationDetails = await fetchInstallationDetails(installation.id);
 
     if (!installationDetails) {
       logger.error("Failed to fetch installation details", undefined, {

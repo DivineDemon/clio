@@ -52,7 +52,7 @@ async function handleInstallation(installationId: number) {
 
     logger.info("Fetching installation details", { installationId });
 
-    const installationDetails = await fetchInstallationDetails(installationId, "dummy-owner", "dummy-repo");
+    const installationDetails = await fetchInstallationDetails(installationId);
 
     if (!installationDetails) {
       logger.error("Failed to fetch installation details", undefined, {
@@ -72,11 +72,7 @@ async function handleInstallation(installationId: number) {
       userId: installationDetails.accountId.toString(),
     });
 
-    const repositories = await getInstallationRepositories(
-      installationId,
-      installationDetails.accountLogin,
-      "dummy-repo",
-    );
+    const repositories = await getInstallationRepositories(installationId);
 
     for (const repo of repositories) {
       await createRepository({
@@ -128,11 +124,7 @@ async function handleInstallationUpdate(installationId: number) {
 
     logger.info("Updating installation", { installationId });
 
-    const installationDetails = await fetchInstallationDetails(
-      installationId,
-      existingInstallation.accountLogin,
-      "dummy-repo",
-    );
+    const installationDetails = await fetchInstallationDetails(installationId);
 
     if (!installationDetails) {
       logger.error("Failed to fetch updated installation details", undefined, {
@@ -152,11 +144,7 @@ async function handleInstallationUpdate(installationId: number) {
       suspendedByLogin: installationDetails.suspendedByLogin,
     });
 
-    const repositories = await getInstallationRepositories(
-      installationId,
-      installationDetails.accountLogin,
-      "dummy-repo",
-    );
+    const repositories = await getInstallationRepositories(installationId);
 
     for (const repo of repositories) {
       try {

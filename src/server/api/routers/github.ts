@@ -73,11 +73,7 @@ export const githubRouter = createTRPCRouter({
           const { createInstallation } = await import("@/lib/services/github-installation");
           const { createRepository } = await import("@/lib/services/repository");
 
-          const installationDetails = await fetchInstallationDetails(
-            githubInstallation.id,
-            "dummy-owner",
-            "dummy-repo",
-          );
+          const installationDetails = await fetchInstallationDetails(githubInstallation.id);
 
           if (installationDetails) {
             const createdInstallation = await createInstallation({
@@ -91,7 +87,7 @@ export const githubRouter = createTRPCRouter({
               userId: userId,
             });
 
-            const repositories = await getInstallationRepositories(githubInstallation.id, "dummy-owner", "dummy-repo");
+            const repositories = await getInstallationRepositories(githubInstallation.id);
 
             let createdRepos = 0;
             for (const repo of repositories) {

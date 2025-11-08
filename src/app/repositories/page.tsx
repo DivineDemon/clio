@@ -83,6 +83,11 @@ export default async function RepositoriesPage({ searchParams }: RepositoriesPag
     typeof params.sort === "string" && ["name", "stars", "forks", "updated", "created"].includes(params.sort)
       ? (params.sort as RepositorySortOption)
       : "name";
+  const errorParam = typeof params.error === "string" ? params.error : undefined;
+  const errorMessage =
+    errorParam === "installation-failed"
+      ? "We couldn't verify your GitHub App installation. Please try again."
+      : errorParam;
 
   const [jobs, repositoryResult, installations] = await Promise.all([
     getReadmeJobsByUserId(userId) as Promise<ReadmeJobWithRelations[]>,
@@ -139,6 +144,11 @@ export default async function RepositoriesPage({ searchParams }: RepositoriesPag
   if (!primaryInstallation) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center text-center">
+        {errorMessage && (
+          <div className="mb-4 w-full max-w-md rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm">
+            {errorMessage}
+          </div>
+        )}
         <h1 className="font-semibold text-2xl">Connect your GitHub account</h1>
         <p className="mt-2.5 mb-5 text-muted-foreground text-sm">
           Install the Clio GitHub App to sync your repositories
@@ -152,6 +162,11 @@ export default async function RepositoriesPage({ searchParams }: RepositoriesPag
 
   return (
     <div className="flex h-full w-full flex-col gap-5 overflow-y-auto p-5">
+      {errorMessage && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm">
+          {errorMessage}
+        </div>
+      )}
       <div className="flex w-full flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
         <form className="flex w-full flex-col gap-3 md:flex-row md:items-center" method="get">
           <Input name="search" className="flex-1" placeholder="Search repositories..." defaultValue={search} />

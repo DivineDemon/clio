@@ -34,7 +34,7 @@ export async function POST() {
       installationId,
       userId: session.user.id,
     });
-    const installationDetails = await fetchInstallationDetails(installationId, "dummy-owner", "dummy-repo");
+    const installationDetails = await fetchInstallationDetails(installationId);
 
     if (!installationDetails) {
       return NextResponse.json({ error: "Failed to fetch installation details from GitHub" }, { status: 404 });
@@ -52,11 +52,7 @@ export async function POST() {
     });
 
     logger.info("Fetching repositories for installation", { installationId });
-    const repositories = await getInstallationRepositories(
-      installationId,
-      installationDetails.accountLogin,
-      "dummy-repo",
-    );
+    const repositories = await getInstallationRepositories(installationId);
 
     let createdRepos = 0;
     for (const repo of repositories) {

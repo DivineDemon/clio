@@ -23,7 +23,7 @@ export default function ReadmeJobList({ jobs }: ReadmeJobListProps) {
         return (
           <Link
             key={job.id}
-            href={`/jobs/${job.id}`}
+            href={`/dashboard/jobs/${job.id}`}
             className="flex w-full flex-col items-center justify-center gap-5 rounded-lg border border-gray-200 p-5 transition-all duration-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-slate-700"
           >
             <div className="flex w-full items-start justify-start">

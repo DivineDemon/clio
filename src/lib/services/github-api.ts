@@ -33,11 +33,7 @@ export interface GitHubRepositoryDetails {
   githubUpdatedAt: Date;
 }
 
-export async function fetchInstallationDetails(
-  installationId: number,
-  owner: string,
-  repo: string,
-): Promise<GitHubInstallationDetails | null> {
+export async function fetchInstallationDetails(installationId: number): Promise<GitHubInstallationDetails | null> {
   try {
     const { octokitApp } = await import("@/lib/github");
 
@@ -119,11 +115,7 @@ export async function isRepositoryManaged(
   }
 }
 
-export async function getInstallationRepositories(
-  installationId: number,
-  owner: string,
-  repo: string,
-): Promise<GitHubRepositoryDetails[]> {
+export async function getInstallationRepositories(installationId: number): Promise<GitHubRepositoryDetails[]> {
   try {
     const { getInstallationToken } = await import("@/lib/github");
     const token = await getInstallationToken(installationId);

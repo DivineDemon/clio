@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(installationUrl);
     }
 
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/repositories", request.url));
   } catch (error) {
     logger.error("Error checking installation status", error as Error);
-    return NextResponse.redirect(new URL("/dashboard?error=installation-failed", request.url));
+    return NextResponse.redirect(new URL("/repositories?error=installation-failed", request.url));
   }
 }
 

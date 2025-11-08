@@ -96,7 +96,7 @@ export class ContentAnalyzer {
         primaryLanguage: repository.language || "Unknown",
         framework: this.detectFramework(keyFiles, packageInfo),
         buildTool: this.detectBuildTool(keyFiles, packageInfo),
-        testFramework: this.detectTestFramework(keyFiles, packageInfo),
+        testFramework: this.detectTestFramework(packageInfo),
       };
 
       return analysis;
@@ -359,7 +359,7 @@ export class ContentAnalyzer {
     return undefined;
   }
 
-  private detectTestFramework(keyFiles: KeyFile[], packageInfo?: PackageInfo): string | undefined {
+  private detectTestFramework(packageInfo?: PackageInfo): string | undefined {
     if (packageInfo?.devDependencies) {
       const deps = Object.keys(packageInfo.devDependencies);
       if (deps.includes("jest")) return "Jest";

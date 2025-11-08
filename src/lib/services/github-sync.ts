@@ -16,7 +16,7 @@ export async function syncInstallationRepositories(
 ): Promise<SyncInstallationResult> {
   const existingInstallation = await getInstallationByInstallationId(installationId);
 
-  const installationDetails = await fetchInstallationDetails(installationId, "dummy-owner", "dummy-repo");
+  const installationDetails = await fetchInstallationDetails(installationId);
 
   if (!installationDetails) {
     throw new Error("Failed to fetch installation details from GitHub");
@@ -50,7 +50,7 @@ export async function syncInstallationRepositories(
     userId,
   });
 
-  const repositories = await getInstallationRepositories(installationId, accountLogin, "dummy-repo");
+  const repositories = await getInstallationRepositories(installationId);
 
   let createdRepos = 0;
   for (const repo of repositories) {

@@ -14,6 +14,15 @@ export interface ReadmeGenerationOptions {
   model?: string;
 }
 
+type NormalizedReadmeGenerationOptions = {
+  style: "professional" | "casual" | "minimal" | "detailed";
+  includeImages: boolean;
+  includeBadges: boolean;
+  includeToc: boolean;
+  customPrompt: string | null;
+  model?: string;
+};
+
 export interface ReadmeGenerationResult {
   job: ReadmeJob;
   content: string;
@@ -33,14 +42,16 @@ export class ReadmeGenerator {
     userId: string,
     options: ReadmeGenerationOptions = {},
   ): Promise<{ jobId: string; status: string }> {
+    const normalizedOptions = this.normalizeOptions(repository, options);
+
     const job = await createReadmeJob({
       repositoryId: repository.id,
       userId,
-      includeImages: options.includeImages ?? true,
-      includeBadges: options.includeBadges ?? true,
-      includeToc: options.includeToc ?? true,
-      style: options.style ?? "professional",
-      customPrompt: options.customPrompt,
+      includeImages: normalizedOptions.includeImages,
+      includeBadges: normalizedOptions.includeBadges,
+      includeToc: normalizedOptions.includeToc,
+      style: normalizedOptions.style,
+      customPrompt: normalizedOptions.customPrompt,
     });
 
     await updateReadmeJob(job.id, {
@@ -50,7 +61,7 @@ export class ReadmeGenerator {
 
     Promise.resolve().then(async () => {
       try {
-        await this.processReadmeJob(job.id, repository, installationId, options);
+        await this.processReadmeJob(job.id, repository, installationId, normalizedOptions);
       } catch (error) {
         await updateReadmeJob(job.id, {
           status: "FAILED",
@@ -69,7 +80,7 @@ export class ReadmeGenerator {
     jobId: string,
     repository: Repository,
     installationId: string,
-    options: ReadmeGenerationOptions,
+    options: NormalizedReadmeGenerationOptions,
   ): Promise<void> {
     const startTime = Date.now();
 
@@ -94,14 +105,7 @@ export class ReadmeGenerator {
       };
 
       await updateReadmeJob(jobId, { progress: 70 });
-      const llmResponse = await llmService.generateReadme(repositoryData, {
-        style: options.style,
-        includeImages: options.includeImages,
-        includeBadges: options.includeBadges,
-        includeToc: options.includeToc,
-        customPrompt: options.customPrompt,
-        model: options.model,
-      });
+      const llmResponse = await llmService.generateReadme(repositoryData, options);
 
       await updateReadmeJob(jobId, { progress: 85 });
       const processedContent = this.processReadmeContent(llmResponse.content, analysis);
@@ -144,16 +148,17 @@ export class ReadmeGenerator {
     userId: string,
     options: ReadmeGenerationOptions = {},
   ): Promise<ReadmeGenerationResult> {
+    const normalizedOptions = this.normalizeOptions(repository, options);
     const startTime = Date.now();
 
     const job = await createReadmeJob({
       repositoryId: repository.id,
       userId,
-      includeImages: options.includeImages ?? true,
-      includeBadges: options.includeBadges ?? true,
-      includeToc: options.includeToc ?? true,
-      style: options.style ?? "professional",
-      customPrompt: options.customPrompt,
+      includeImages: normalizedOptions.includeImages,
+      includeBadges: normalizedOptions.includeBadges,
+      includeToc: normalizedOptions.includeToc,
+      style: normalizedOptions.style,
+      customPrompt: normalizedOptions.customPrompt,
     });
 
     try {
@@ -177,14 +182,7 @@ export class ReadmeGenerator {
       };
 
       await updateReadmeJob(job.id, { progress: 70 });
-      const llmResponse = await llmService.generateReadme(repositoryData, {
-        style: options.style,
-        includeImages: options.includeImages,
-        includeBadges: options.includeBadges,
-        includeToc: options.includeToc,
-        customPrompt: options.customPrompt,
-        model: options.model,
-      });
+      const llmResponse = await llmService.generateReadme(repositoryData, normalizedOptions);
 
       await updateReadmeJob(job.id, { progress: 85 });
       const processedContent = this.processReadmeContent(llmResponse.content, analysis);
@@ -391,6 +389,20 @@ docker run -p 3000:3000 project-name
     }
 
     return unique.join("\n");
+  }
+
+  private normalizeOptions(
+    repository: Repository,
+    options: ReadmeGenerationOptions = {},
+  ): NormalizedReadmeGenerationOptions {
+    return {
+      style: options.style ?? "professional",
+      includeImages: options.includeImages ?? true,
+      includeBadges: repository.isPrivate ? false : (options.includeBadges ?? true),
+      includeToc: options.includeToc ?? true,
+      customPrompt: options.customPrompt ?? null,
+      model: options.model,
+    };
   }
 
   private countWords(content: string): number {
