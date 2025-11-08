@@ -10,7 +10,3 @@ export interface ReadmeJobWithRelations extends ReadmeJob {
     image?: string | null;
   } | null;
 }
-
-export interface ReadmeVersionWithJob extends ReadmeVersion {
-  job?: ReadmeJobWithRelations | null;
-}

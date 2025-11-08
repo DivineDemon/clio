@@ -1,4 +1,6 @@
-import type { JobStatus, ReadmeJob, ReadmeVersion } from "@prisma/client";
+import type { JobStatus, Prisma, ReadmeJob, ReadmeVersion } from "@prisma/client";
+import { formatDistanceToNow } from "date-fns";
+import type { ReadmeJobWithRelations } from "@/lib/types/readme-job";
 import { db } from "@/server/db";
 
 export interface CreateReadmeJobData {
@@ -84,29 +86,10 @@ export async function getReadmeJobsByUserId(userId: string, status?: JobStatus):
   });
 }
 
-export async function getReadmeJobsByRepositoryId(repositoryId: string): Promise<ReadmeJob[]> {
-  return await db.readmeJob.findMany({
-    where: { repositoryId },
-    include: {
-      user: true,
-      versions: {
-        orderBy: { createdAt: "desc" },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-}
-
 export async function updateReadmeJob(id: string, data: UpdateReadmeJobData): Promise<ReadmeJob> {
   return await db.readmeJob.update({
     where: { id },
     data,
-  });
-}
-
-export async function deleteReadmeJob(id: string): Promise<void> {
-  await db.readmeJob.delete({
-    where: { id },
   });
 }
 
@@ -121,20 +104,6 @@ export async function createReadmeVersion(data: CreateReadmeVersionData): Promis
       modelUsed: data.modelUsed,
       tokensUsed: data.tokensUsed,
       generationTime: data.generationTime,
-    },
-  });
-}
-
-export async function getReadmeVersionById(id: string): Promise<ReadmeVersion | null> {
-  return await db.readmeVersion.findUnique({
-    where: { id },
-    include: {
-      job: {
-        include: {
-          repository: true,
-          user: true,
-        },
-      },
     },
   });
 }
@@ -154,39 +123,105 @@ export async function getLatestReadmeVersion(jobId: string): Promise<ReadmeVersi
   });
 }
 
-export async function getReadmeVersionsByJobId(jobId: string): Promise<ReadmeVersion[]> {
-  return await db.readmeVersion.findMany({
-    where: { jobId },
-    orderBy: { createdAt: "desc" },
-  });
+export interface ReadmeJobFilters {
+  query?: string;
+  status?: string;
+  sortBy?: string;
 }
 
-export async function getPendingJobs(): Promise<ReadmeJob[]> {
-  return await db.readmeJob.findMany({
-    where: { status: "PENDING" },
-    include: {
-      repository: {
-        include: {
-          installation: true,
-        },
-      },
-      user: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+export interface ReadmeJobSummary {
+  total: number;
+  completed: number;
+  processing: number;
+  failed: number;
+  lastCompletedAt?: string;
 }
 
-export async function getProcessingJobs(): Promise<ReadmeJob[]> {
-  return await db.readmeJob.findMany({
-    where: { status: "PROCESSING" },
-    include: {
-      repository: {
-        include: {
-          installation: true,
+export interface DashboardJobsResult {
+  jobs: ReadmeJobWithRelations[];
+  summary: ReadmeJobSummary;
+  availableStatuses: string[];
+}
+
+export async function getReadmeJobsForDashboard(
+  userId: string,
+  filters: ReadmeJobFilters,
+): Promise<DashboardJobsResult> {
+  const where: Record<string, unknown> = {
+    userId,
+    ...(filters.query && {
+      OR: [
+        {
+          repository: {
+            name: { contains: filters.query, mode: "insensitive" },
+          },
         },
+        {
+          repository: {
+            fullName: { contains: filters.query, mode: "insensitive" },
+          },
+        },
+      ],
+    }),
+    ...(filters.status && filters.status !== "all"
+      ? {
+          status: filters.status,
+        }
+      : {}),
+  };
+
+  let orderBy: Prisma.ReadmeJobOrderByWithRelationInput = { createdAt: "desc" };
+
+  if (filters.sortBy === "createdAsc") {
+    orderBy = { createdAt: "asc" };
+  } else if (filters.sortBy === "updatedDesc") {
+    orderBy = { updatedAt: "desc" };
+  }
+
+  const jobs = (await db.readmeJob.findMany({
+    where,
+    include: {
+      repository: true,
+      versions: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
       },
-      user: true,
     },
-    orderBy: { createdAt: "asc" },
+    orderBy,
+  })) as ReadmeJobWithRelations[];
+
+  const summaryAggregate = await db.readmeJob.groupBy({
+    by: ["status"],
+    where: { userId },
+    _count: true,
   });
+
+  const total = jobs.length;
+  const completed = summaryAggregate.find((item) => item.status === "COMPLETED")?._count ?? 0;
+  const processing = summaryAggregate.find((item) => item.status === "PROCESSING")?._count ?? 0;
+  const failed = summaryAggregate.find((item) => item.status === "FAILED")?._count ?? 0;
+
+  const lastCompletedJob = await db.readmeJob.findFirst({
+    where: { userId, status: "COMPLETED" },
+    orderBy: { completedAt: "desc" },
+    select: { completedAt: true },
+  });
+
+  const summary: ReadmeJobSummary = {
+    total,
+    completed,
+    processing,
+    failed,
+    lastCompletedAt: lastCompletedJob?.completedAt
+      ? formatDistanceToNow(lastCompletedJob.completedAt, { addSuffix: true })
+      : undefined,
+  };
+
+  const availableStatuses = summaryAggregate.map((item) => item.status);
+
+  return {
+    jobs,
+    summary,
+    availableStatuses,
+  };
 }

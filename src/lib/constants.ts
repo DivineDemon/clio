@@ -1,4 +1,4 @@
-import { Activity, Brain, Github, type LucideProps, RefreshCw, Settings, Sparkles } from "lucide-react";
+import { Activity, Brain, Folder, Github, Home, type LucideProps, RefreshCw, Settings, Sparkles } from "lucide-react";
 import { type ForwardRefExoticComponent, type RefAttributes } from "react";
 
 export const SAMPLE_TWO = `# 👋 Hey, I'm Mushood Hanif!
@@ -227,5 +227,20 @@ export const TESTIMONIALS: Testimonial[] = [
     avatar: "https://i.pravatar.cc/150?img=14",
     content:
       "I've tried other README generators, but Clio is in a league of its own. The quality is outstanding, and the pay-per-use model is perfect for freelancers like me.",
+  },
+];
+
+export const SIDEBAR_ITEMS = [
+  {
+    id: 1,
+    name: "Dashboard",
+    path: "/dashboard",
+    icon: Home,
+  },
+  {
+    id: 2,
+    name: "Repositories",
+    path: "/repositories",
+    icon: Folder,
   },
 ];
