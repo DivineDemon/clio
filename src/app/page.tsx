@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Features from "@/components/landing/features";
 import Header from "@/components/landing/header";
 import Navbar from "@/components/landing/navbar";
+import Pricing from "@/components/landing/pricing";
 import Testimonials from "@/components/landing/testimonials";
 import { auth } from "@/lib/auth";
 
@@ -18,6 +19,7 @@ const Page = async () => {
       <Header />
       <Testimonials />
       <Features />
+      <Pricing />
     </div>
   );
 };
