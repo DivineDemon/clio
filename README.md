@@ -29,11 +29,11 @@
 
 | Badge                                                                               | Description                                    |
 | :---------------------------------------------------------------------------------- | :--------------------------------------------- |
-| ![GitHub last commit](https://img.shields.io/github/last-commit/username/clio)    | Shows the date of the last commit.             |
-| ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/username/clio/main.yml) | Placeholder for your CI/CD build status.       |
-| ![GitHub top language](https://img.shields.io/github/languages/top/username/clio) | Indicates the primary programming language.    |
-| ![GitHub contributors](https://img.shields.io/github/contributors/username/clio) | Shows the number of project contributors.      |
-| ![GitHub license](https://img.shields.io/github/license/username/clio)            | Displays the project's license (e.g., MIT).    |
+| ![GitHub last commit](https://img.shields.io/github/last-commit/DivineDemon/clio)    | Shows the date of the last commit.             |
+| ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/DivineDemon/clio/main.yml) | Placeholder for your CI/CD build status.       |
+| ![GitHub top language](https://img.shields.io/github/languages/top/DivineDemon/clio) | Indicates the primary programming language.    |
+| ![GitHub contributors](https://img.shields.io/github/contributors/DivineDemon/clio) | Shows the number of project contributors.      |
+| ![GitHub license](https://img.shields.io/github/license/DivineDemon/clio)            | Displays the project's license (e.g., MIT).    |
 
 **Note**: Replace `username/clio` with the actual GitHub repository path once available. For the build status, update `main.yml` to your CI/CD workflow file name.
 
