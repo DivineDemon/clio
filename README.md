@@ -132,7 +132,6 @@ You will need to configure the following environment variables in your `.env` fi
 Example `.env` structure:
 
 ```env
-
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/clio?schema=public"
 
@@ -287,31 +286,34 @@ Ensure you have followed the [Installation](#installation) steps completely.
 
 1.  **Fork the repository**: Fork `clio` to your GitHub account.
 2.  **Create a new branch**:
-    ```bash
+```bash
 git checkout -b feature/your-feature-name
 ```
-3.  **Make your changes**: Implement your feature or bug fix. Ensure your code adheres to the project's coding style (enforced by Biome).
-4.  **Run tests (if any)**:
-    ```bash
 
-# Placeholder for test command, if applicable
-    # pnpm test
+3.  **Make your changes**: Implement your feature or bug fix. Ensure your code adheres to the project's coding style (enforced by Biome).
+
+4.  **Run tests (if any)**
+
+```bash
+pnpm test
 ```
+
 5.  **Format and lint**: Before committing, ensure your code is properly formatted and linted:
-    ```bash
+
+```bash
 pnpm biome format --write ./src
-    pnpm biome lint --apply ./src
+pnpm biome lint --apply ./src
 ```
 
 
 ### Submitting Changes
 
 1.  **Commit your changes**: Write clear and descriptive commit messages.
-    ```bash
+```bash
 git commit -m "feat: Add new awesome feature"
 ```
 2.  **Push to your fork**:
-    ```bash
+```bash
 git push origin feature/your-feature-name
 ```
 3.  **Create a Pull Request**: Open a pull request from your forked repository to the `main` branch of the `clio` repository. Provide a detailed description of your changes.
