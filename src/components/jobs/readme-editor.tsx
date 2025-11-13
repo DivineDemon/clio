@@ -87,7 +87,7 @@ export default function ReadmeEditor({ initialContent, lastSavedLabel, saveReadm
       </div>
       <div
         data-color-mode={colorMode}
-        className="h-[calc(100vh-212px)] overflow-hidden rounded-lg border border-border"
+        className="h-[calc(100vh-212px)] w-full overflow-hidden rounded-lg border border-border"
       >
         <MDEditor value={content} onChange={(value = "") => setContent(value)} height={769} preview="live" />
       </div>

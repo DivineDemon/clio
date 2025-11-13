@@ -62,7 +62,8 @@ export default function ReadmeGenerationDialog({
         <DialogHeader>
           <DialogTitle>README Generation Settings</DialogTitle>
           <DialogDescription>
-            Configure how the README should be generated for <span className="font-semibold">{repo.name}</span>.
+            Configure how the README should be generated for&nbsp;
+            <span className="font-semibold">{repo.name}</span>.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
@@ -88,26 +89,10 @@ export default function ReadmeGenerationDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="model">AI Model</Label>
-            <Select
-              value={readmeSettings.model}
-              onValueChange={(value) =>
-                setReadmeSettings((prev) => ({
-                  ...prev,
-                  model: value as ReadmeSettings["model"],
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Fast & Efficient)</SelectItem>
-                <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Advanced Reasoning)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="rounded-md border border-blue-300 border-dashed bg-blue-50 px-3 py-2 text-blue-900 text-sm dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200">
+            README generation currently runs on&nbsp;
+            <span className="font-semibold">Gemini 2.5 Flash Lite</span> for balanced speed and quality.
+          </p>
           <div className="space-y-4">
             <Label>Include Features</Label>
             <div className="space-y-3">

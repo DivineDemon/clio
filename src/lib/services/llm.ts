@@ -29,16 +29,9 @@ export interface LLMRequest {
 
 export const AVAILABLE_MODELS: LLMModel[] = [
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    description: "Fast and efficient model for quick responses",
-    maxTokens: 8192,
-    contextWindow: 1000000,
-  },
-  {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    description: "Advanced model for complex reasoning and analysis",
+    id: "gemini-2.5-flash-lite",
+    name: "Gemini 2.5 Flash Lite",
+    description: "Balanced speed and quality for README generation",
     maxTokens: 8192,
     contextWindow: 1000000,
   },

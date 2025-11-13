@@ -20,7 +20,7 @@ export type ReadmeSettings = {
   includeBadges: boolean;
   includeToc: boolean;
   customPrompt: string;
-  model: "gemini-2.5-flash" | "gemini-2.5-pro";
+  model: "gemini-2.5-flash-lite";
 };
 
 export default function RepositoryListClient({ repositories, jobs }: RepositoryListClientProps) {
@@ -31,7 +31,7 @@ export default function RepositoryListClient({ repositories, jobs }: RepositoryL
     includeBadges: true,
     includeToc: true,
     customPrompt: "",
-    model: "gemini-2.5-flash",
+    model: "gemini-2.5-flash-lite",
   });
 
   const generateReadme = api.readme.generate.useMutation({

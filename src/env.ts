@@ -11,7 +11,7 @@ export const env = createEnv({
     GITHUB_APP_ID: z.string().min(1),
     GITHUB_WEBHOOK_SECRET: z.string().min(1),
     GEMINI_API_KEY: z.string().min(1),
-    GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+    GEMINI_MODEL: z.string().default("gemini-2.5-flash-lite"),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     SKIP_ENV_VALIDATION: z.boolean().default(false),
     DEBUG: z.string().optional(),
