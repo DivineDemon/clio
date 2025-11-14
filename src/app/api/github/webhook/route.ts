@@ -7,7 +7,13 @@ import {
   getInstallationRepositories,
   isRepositoryManaged,
 } from "@/lib/services/github-api";
-import { createInstallation, deleteInstallation, updateInstallation } from "@/lib/services/github-installation";
+import {
+  createInstallation,
+  deleteInstallation,
+  updateInstallation,
+  getInstallationByInstallationId,
+  findUserIdForGithubAccount,
+} from "@/lib/services/github-installation";
 import { createRepository, deleteRepository, updateRepository } from "@/lib/services/repository";
 import type {
   GitHubInstallationEventPayload,
@@ -68,7 +74,18 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
 
     switch (action) {
       case "created": {
-        await createInstallation({
+        const resolvedUserId = await findUserIdForGithubAccount(installationDetails.accountId);
+
+        if (!resolvedUserId) {
+          logger.error("Unable to resolve user for installation webhook", undefined, {
+            installationId: installation.id,
+            accountId: installationDetails.accountId,
+            accountLogin: installationDetails.accountLogin,
+          });
+          return;
+        }
+
+        const installationRecord = await createInstallation({
           installationId: installation.id,
           accountId: installationDetails.accountId,
           accountLogin: installationDetails.accountLogin,
@@ -76,7 +93,7 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
           targetType: installationDetails.targetType,
           permissions: installationDetails.permissions,
           events: installationDetails.events,
-          userId: installationDetails.accountId.toString(),
+          userId: resolvedUserId,
         });
 
         const repositories = await getInstallationRepositories(installation.id);
@@ -100,8 +117,8 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
             pushedAt: repo.pushedAt,
             githubCreatedAt: repo.githubCreatedAt,
             githubUpdatedAt: repo.githubUpdatedAt,
-            userId: installationDetails.accountId.toString(),
-            installationId: installation.id.toString(),
+            userId: resolvedUserId,
+            installationId: installationRecord.id,
           });
         }
 
@@ -173,6 +190,15 @@ async function handleInstallationRepositoriesEvent(payload: GitHubInstallationRe
       return;
     }
 
+    const installationRecord = await getInstallationByInstallationId(installation.id);
+
+    if (!installationRecord) {
+      logger.warn("Installation not found locally, skipping repositories sync", {
+        installationId: installation.id,
+      });
+      return;
+    }
+
     if (repositories_added && repositories_added.length > 0) {
       for (const repo of repositories_added) {
         const repoDetails = await fetchRepositoryDetails(installationDetails.accountLogin, repo.name);
@@ -196,8 +222,8 @@ async function handleInstallationRepositoriesEvent(payload: GitHubInstallationRe
             pushedAt: repoDetails.pushedAt,
             githubCreatedAt: repoDetails.githubCreatedAt,
             githubUpdatedAt: repoDetails.githubUpdatedAt,
-            userId: installationDetails.accountId.toString(),
-            installationId: installation.id.toString(),
+            userId: installationRecord.userId,
+            installationId: installationRecord.id,
           });
         }
       }
@@ -236,6 +262,17 @@ async function handleRepositoryEvent(payload: GitHubRepositoryEventPayload) {
       return;
     }
 
+    const installationRecord = await getInstallationByInstallationId(installationId);
+
+    if (!installationRecord) {
+      logger.warn("Repository event received for unknown installation", {
+        installationId,
+        repository: repository.full_name,
+        action,
+      });
+      return;
+    }
+
     const repositoryDetails = await fetchRepositoryDetails(repository.owner.login, repository.name);
 
     if (!repositoryDetails) {
@@ -265,8 +302,8 @@ async function handleRepositoryEvent(payload: GitHubRepositoryEventPayload) {
           pushedAt: repositoryDetails.pushedAt,
           githubCreatedAt: repositoryDetails.githubCreatedAt,
           githubUpdatedAt: repositoryDetails.githubUpdatedAt,
-          userId: repository.owner.id.toString(),
-          installationId: installationId.toString(),
+          userId: installationRecord.userId,
+          installationId: installationRecord.id,
         });
         logger.info("Created repository", { repository: repository.full_name });
         break;

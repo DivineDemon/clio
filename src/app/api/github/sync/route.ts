@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch installation details from GitHub" }, { status: 404 });
     }
 
-    await createInstallation({
+    const installationRecord = await createInstallation({
       installationId: installationDetails.id,
       accountId: installationDetails.accountId,
       accountLogin: installationDetails.accountLogin,
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
           githubCreatedAt: repo.githubCreatedAt,
           githubUpdatedAt: repo.githubUpdatedAt,
           userId: session.user.id,
-          installationId: installationId,
+          installationId: installationRecord.id,
         });
         createdRepos++;
       } catch {

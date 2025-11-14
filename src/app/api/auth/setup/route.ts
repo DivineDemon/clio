@@ -1,16 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { fetchInstallationDetails, getInstallationRepositories } from "@/lib/services/github-api";
 import {
   createInstallation,
   getInstallationByInstallationId,
   updateInstallation,
+  findUserIdForGithubAccount,
 } from "@/lib/services/github-installation";
 import { createRepository } from "@/lib/services/repository";
 
 export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
+    const session = await auth();
+    const sessionUserId = session?.user?.id ?? null;
     const installationId = url.searchParams.get("installation_id");
     const setupAction = url.searchParams.get("setup_action");
 
@@ -19,10 +23,10 @@ export async function GET(request: NextRequest) {
 
       switch (setupAction) {
         case "install":
-          await handleInstallation(installationIdNum);
+          await handleInstallation(installationIdNum, sessionUserId);
           break;
         case "update":
-          await handleInstallationUpdate(installationIdNum);
+          await handleInstallationUpdate(installationIdNum, sessionUserId);
           break;
         default:
           logger.warn("Unknown setup action", {
@@ -40,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function handleInstallation(installationId: number) {
+async function handleInstallation(installationId: number, sessionUserId: string | null) {
   try {
     const existingInstallation = await getInstallationByInstallationId(installationId);
     if (existingInstallation) {
@@ -61,7 +65,19 @@ async function handleInstallation(installationId: number) {
       return;
     }
 
-    await createInstallation({
+    const resolvedUserId =
+      sessionUserId ?? (await findUserIdForGithubAccount(installationDetails.accountId));
+
+    if (!resolvedUserId) {
+      logger.error("Unable to resolve user for installation", undefined, {
+        installationId,
+        accountId: installationDetails.accountId,
+        accountLogin: installationDetails.accountLogin,
+      });
+      return;
+    }
+
+    const installationRecord = await createInstallation({
       installationId: installationDetails.id,
       accountId: installationDetails.accountId,
       accountLogin: installationDetails.accountLogin,
@@ -69,7 +85,7 @@ async function handleInstallation(installationId: number) {
       targetType: installationDetails.targetType,
       permissions: installationDetails.permissions,
       events: installationDetails.events,
-      userId: installationDetails.accountId.toString(),
+      userId: resolvedUserId,
     });
 
     const repositories = await getInstallationRepositories(installationId);
@@ -93,8 +109,8 @@ async function handleInstallation(installationId: number) {
         pushedAt: repo.pushedAt,
         githubCreatedAt: repo.githubCreatedAt,
         githubUpdatedAt: repo.githubUpdatedAt,
-        userId: installationDetails.accountId.toString(),
-        installationId: installationId.toString(),
+        userId: resolvedUserId,
+        installationId: installationRecord.id,
       });
     }
 
@@ -111,14 +127,14 @@ async function handleInstallation(installationId: number) {
   }
 }
 
-async function handleInstallationUpdate(installationId: number) {
+async function handleInstallationUpdate(installationId: number, sessionUserId: string | null) {
   try {
     const existingInstallation = await getInstallationByInstallationId(installationId);
     if (!existingInstallation) {
       logger.info("Installation not found, creating new installation", {
         installationId,
       });
-      await handleInstallation(installationId);
+      await handleInstallation(installationId, sessionUserId);
       return;
     }
 
@@ -144,6 +160,20 @@ async function handleInstallationUpdate(installationId: number) {
       suspendedByLogin: installationDetails.suspendedByLogin,
     });
 
+    const resolvedUserId =
+      existingInstallation.userId ??
+      sessionUserId ??
+      (await findUserIdForGithubAccount(installationDetails.accountId));
+
+    if (!resolvedUserId) {
+      logger.error("Unable to resolve user for installation update", undefined, {
+        installationId,
+        accountId: installationDetails.accountId,
+        accountLogin: installationDetails.accountLogin,
+      });
+      return;
+    }
+
     const repositories = await getInstallationRepositories(installationId);
 
     for (const repo of repositories) {
@@ -166,8 +196,8 @@ async function handleInstallationUpdate(installationId: number) {
           pushedAt: repo.pushedAt,
           githubCreatedAt: repo.githubCreatedAt,
           githubUpdatedAt: repo.githubUpdatedAt,
-          userId: installationDetails.accountId.toString(),
-          installationId: installationId.toString(),
+          userId: resolvedUserId,
+          installationId: existingInstallation.id,
         });
       } catch {
         logger.debug("Repository already exists, skipping creation", {

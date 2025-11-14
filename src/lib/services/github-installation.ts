@@ -92,3 +92,15 @@ export async function isInstallationActive(installationId: number): Promise<bool
 
   return installation !== null && installation.suspendedAt === null;
 }
+
+export async function findUserIdForGithubAccount(accountId: number): Promise<string | null> {
+  const account = await db.account.findFirst({
+    where: {
+      provider: "github",
+      providerAccountId: accountId.toString(),
+    },
+    select: { userId: true },
+  });
+
+  return account?.userId ?? null;
+}
