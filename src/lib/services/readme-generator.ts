@@ -71,7 +71,7 @@ export class ReadmeGenerator {
   }
   async queueReadmeGeneration(
     repository: Repository,
-    _installationId: string,
+    installationId: string,
     userId: string,
     options: ReadmeGenerationOptions = {},
   ): Promise<{ jobId: string; status: string }> {
@@ -92,7 +92,11 @@ export class ReadmeGenerator {
       progress: 0,
     });
 
-    this.scheduleJobProcessing(job.id);
+    try {
+      await this.processReadmeJob(job.id, repository, installationId, normalizedOptions);
+    } catch (error) {
+      await this.failJob(job.id, "README generation failed during immediate processing", error);
+    }
 
     return {
       jobId: job.id,
