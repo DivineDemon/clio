@@ -1,7 +1,8 @@
-import type { JobStatus, Prisma, ReadmeJob, ReadmeVersion } from "@prisma/client";
+import { Prisma, type JobStatus, type ReadmeJob, type ReadmeVersion } from "@prisma/client";
 import { formatDistanceToNow } from "date-fns";
 import type { ReadmeJobWithRelations } from "@/lib/types/readme-job";
 import { db } from "@/server/db";
+import { logger } from "@/lib/logger";
 
 export interface CreateReadmeJobData {
   repositoryId: string;
@@ -86,11 +87,22 @@ export async function getReadmeJobsByUserId(userId: string, status?: JobStatus):
   });
 }
 
-export async function updateReadmeJob(id: string, data: UpdateReadmeJobData): Promise<ReadmeJob> {
-  return await db.readmeJob.update({
-    where: { id },
-    data,
-  });
+export async function updateReadmeJob(id: string, data: UpdateReadmeJobData): Promise<ReadmeJob | null> {
+  try {
+    return await db.readmeJob.update({
+      where: { id },
+      data,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      logger.warn("Attempted to update non-existent ReadmeJob", {
+        jobId: id,
+        dataKeys: Object.keys(data),
+      });
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function deleteReadmeJob(id: string): Promise<void> {
