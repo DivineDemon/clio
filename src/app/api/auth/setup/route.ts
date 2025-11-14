@@ -4,9 +4,9 @@ import { logger } from "@/lib/logger";
 import { fetchInstallationDetails, getInstallationRepositories } from "@/lib/services/github-api";
 import {
   createInstallation,
+  findUserIdForGithubAccount,
   getInstallationByInstallationId,
   updateInstallation,
-  findUserIdForGithubAccount,
 } from "@/lib/services/github-installation";
 import { createRepository } from "@/lib/services/repository";
 
@@ -65,8 +65,7 @@ async function handleInstallation(installationId: number, sessionUserId: string 
       return;
     }
 
-    const resolvedUserId =
-      sessionUserId ?? (await findUserIdForGithubAccount(installationDetails.accountId));
+    const resolvedUserId = sessionUserId ?? (await findUserIdForGithubAccount(installationDetails.accountId));
 
     if (!resolvedUserId) {
       logger.error("Unable to resolve user for installation", undefined, {
@@ -161,9 +160,7 @@ async function handleInstallationUpdate(installationId: number, sessionUserId: s
     });
 
     const resolvedUserId =
-      existingInstallation.userId ??
-      sessionUserId ??
-      (await findUserIdForGithubAccount(installationDetails.accountId));
+      existingInstallation.userId ?? sessionUserId ?? (await findUserIdForGithubAccount(installationDetails.accountId));
 
     if (!resolvedUserId) {
       logger.error("Unable to resolve user for installation update", undefined, {

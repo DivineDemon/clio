@@ -10,9 +10,9 @@ import {
 import {
   createInstallation,
   deleteInstallation,
-  updateInstallation,
-  getInstallationByInstallationId,
   findUserIdForGithubAccount,
+  getInstallationByInstallationId,
+  updateInstallation,
 } from "@/lib/services/github-installation";
 import { createRepository, deleteRepository, updateRepository } from "@/lib/services/repository";
 import type {
