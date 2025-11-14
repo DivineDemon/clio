@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto";
 import type { ReadmeJob, Repository } from "@prisma/client";
+import { env } from "@/env";
+import { logger } from "@/lib/logger";
+import { db } from "@/server/db";
 import type { RepositoryAnalysis } from "./content-analyzer";
 import { contentAnalyzer } from "./content-analyzer";
 import { llmService } from "./llm";
-import { createReadmeJob, createReadmeVersion, updateReadmeJob } from "./readme-job";
+import { createReadmeJob, createReadmeVersion, getReadmeJobById, updateReadmeJob } from "./readme-job";
 
 export interface ReadmeGenerationOptions {
   style?: "professional" | "casual" | "minimal" | "detailed";
@@ -35,10 +38,40 @@ export interface ReadmeGenerationResult {
   };
 }
 
+type JobStyle = "professional" | "casual" | "minimal" | "detailed";
+
+type JobWithRepository = ReadmeJob & {
+  repository: Repository & {
+    installation: {
+      installationId: number;
+    } | null;
+  };
+};
+
 export class ReadmeGenerator {
+  private processingJobs = new Set<string>();
+  private hasRecovered = false;
+
+  constructor() {
+    void this.recoverPendingJobs();
+  }
+
+  private async failJob(jobId: string, message: string, error?: unknown) {
+    if (error instanceof Error) {
+      logger.error(message, error, { jobId });
+    } else {
+      logger.error(message, undefined, { jobId });
+    }
+
+    await updateReadmeJob(jobId, {
+      status: "FAILED",
+      errorMessage: error instanceof Error ? error.message : message,
+      completedAt: new Date(),
+    });
+  }
   async queueReadmeGeneration(
     repository: Repository,
-    installationId: string,
+    _installationId: string,
     userId: string,
     options: ReadmeGenerationOptions = {},
   ): Promise<{ jobId: string; status: string }> {
@@ -59,21 +92,88 @@ export class ReadmeGenerator {
       progress: 0,
     });
 
-    Promise.resolve().then(async () => {
-      try {
-        await this.processReadmeJob(job.id, repository, installationId, normalizedOptions);
-      } catch (error) {
-        await updateReadmeJob(job.id, {
-          status: "FAILED",
-          errorMessage: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-    });
+    this.scheduleJobProcessing(job.id);
 
     return {
       jobId: job.id,
       status: "QUEUED",
     };
+  }
+
+  private scheduleJobProcessing(jobId: string) {
+    if (this.processingJobs.has(jobId)) {
+      return;
+    }
+
+    this.processingJobs.add(jobId);
+
+    setImmediate(() => {
+      void this.executeJob(jobId)
+        .catch(async (error) => {
+          await this.failJob(jobId, "Failed to process README job", error);
+        })
+        .finally(() => {
+          this.processingJobs.delete(jobId);
+        });
+    });
+  }
+
+  private async executeJob(jobId: string): Promise<void> {
+    const jobRecord = (await getReadmeJobById(jobId)) as JobWithRepository | null;
+
+    if (!jobRecord) {
+      logger.warn("README job not found when attempting to process", { jobId });
+      return;
+    }
+
+    if (!jobRecord.repository) {
+      await this.failJob(jobId, "Repository record missing for this job");
+      return;
+    }
+
+    if (!jobRecord.repository.installation) {
+      await this.failJob(jobId, "GitHub App installation missing for repository");
+      return;
+    }
+
+    const normalizedOptions = this.normalizeOptions(jobRecord.repository, {
+      style: (jobRecord.style as JobStyle) ?? "professional",
+      includeImages: jobRecord.includeImages,
+      includeBadges: jobRecord.includeBadges,
+      includeToc: jobRecord.includeToc,
+      customPrompt: jobRecord.customPrompt,
+    });
+
+    await this.processReadmeJob(
+      jobRecord.id,
+      jobRecord.repository,
+      jobRecord.repository.installation.installationId.toString(),
+      normalizedOptions,
+    );
+  }
+
+  private async recoverPendingJobs() {
+    if (this.hasRecovered) {
+      return;
+    }
+    this.hasRecovered = true;
+
+    try {
+      const pendingJobs = await db.readmeJob.findMany({
+        where: {
+          status: {
+            in: ["QUEUED", "PROCESSING"],
+          },
+        },
+        select: { id: true },
+      });
+
+      for (const job of pendingJobs) {
+        this.scheduleJobProcessing(job.id);
+      }
+    } catch (error) {
+      logger.error("Failed to recover pending README jobs", error as Error);
+    }
   }
 
   async processReadmeJob(
@@ -105,6 +205,10 @@ export class ReadmeGenerator {
       };
 
       await updateReadmeJob(jobId, { progress: 70 });
+      logger.info("Invoking Gemini to generate README", {
+        jobId,
+        model: options.model ?? env.GEMINI_MODEL,
+      });
       const llmResponse = await llmService.generateReadme(repositoryData, options);
 
       await updateReadmeJob(jobId, { progress: 85 });
@@ -134,11 +238,7 @@ export class ReadmeGenerator {
         processingTime,
       });
     } catch (error) {
-      await updateReadmeJob(jobId, {
-        status: "FAILED",
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
-        completedAt: new Date(),
-      });
+      await this.failJob(jobId, "README generation failed", error);
     }
   }
 
@@ -182,6 +282,10 @@ export class ReadmeGenerator {
       };
 
       await updateReadmeJob(job.id, { progress: 70 });
+      logger.info("Invoking Gemini to generate README (sync)", {
+        jobId: job.id,
+        model: normalizedOptions.model ?? env.GEMINI_MODEL,
+      });
       const llmResponse = await llmService.generateReadme(repositoryData, normalizedOptions);
 
       await updateReadmeJob(job.id, { progress: 85 });

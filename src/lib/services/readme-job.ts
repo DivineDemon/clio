@@ -1,8 +1,8 @@
-import { Prisma, type JobStatus, type ReadmeJob, type ReadmeVersion } from "@prisma/client";
+import { type JobStatus, Prisma, type ReadmeJob, type ReadmeVersion } from "@prisma/client";
 import { formatDistanceToNow } from "date-fns";
+import { logger } from "@/lib/logger";
 import type { ReadmeJobWithRelations } from "@/lib/types/readme-job";
 import { db } from "@/server/db";
-import { logger } from "@/lib/logger";
 
 export interface CreateReadmeJobData {
   repositoryId: string;
