@@ -74,6 +74,15 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
 
     switch (action) {
       case "created": {
+        const existingInstallation = await getInstallationByInstallationId(installation.id);
+
+        if (existingInstallation) {
+          logger.info("Installation already exists from webhook, skipping creation", {
+            installationId: installation.id,
+            accountLogin: installationDetails.accountLogin,
+          });
+        }
+
         const resolvedUserId = await findUserIdForGithubAccount(installationDetails.accountId);
 
         if (!resolvedUserId) {
@@ -85,16 +94,18 @@ async function handleInstallationEvent(payload: GitHubInstallationEventPayload) 
           return;
         }
 
-        const installationRecord = await createInstallation({
-          installationId: installation.id,
-          accountId: installationDetails.accountId,
-          accountLogin: installationDetails.accountLogin,
-          accountType: installationDetails.accountType,
-          targetType: installationDetails.targetType,
-          permissions: installationDetails.permissions,
-          events: installationDetails.events,
-          userId: resolvedUserId,
-        });
+        const installationRecord =
+          existingInstallation ??
+          (await createInstallation({
+            installationId: installation.id,
+            accountId: installationDetails.accountId,
+            accountLogin: installationDetails.accountLogin,
+            accountType: installationDetails.accountType,
+            targetType: installationDetails.targetType,
+            permissions: installationDetails.permissions,
+            events: installationDetails.events,
+            userId: resolvedUserId,
+          }));
 
         const repositories = await getInstallationRepositories(installation.id);
 
