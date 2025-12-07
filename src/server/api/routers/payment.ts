@@ -63,16 +63,12 @@ export const paymentRouter = createTRPCRouter({
 
     if (!user) return null;
 
-    // Sync logic: Ensure freeGenerationsUsed reflects total jobs for legacy purposes
-    // (We assume all existing jobs count against free tier until credit system is active)
     const totalJobCount = await ctx.db.readmeJob.count({
       where: { userId: ctx.session.user.id },
     });
 
     let effectiveFreeUsed = user.freeGenerationsUsed;
 
-    // If total jobs exceeds what we tracked as "free used", update the tracker
-    // This catches legacy jobs that happened before we started tracking
     if (totalJobCount > user.freeGenerationsUsed) {
       await ctx.db.user.update({
         where: { id: user.id },
