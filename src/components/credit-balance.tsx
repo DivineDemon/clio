@@ -43,8 +43,8 @@ export function CreditBalance() {
   const freeUsed = user.freeGenerationsUsed;
   const freeRemaining = Math.max(0, totalFree - freeUsed);
   const credits = user.credits;
-  const _hasCredits = credits > 0;
-  const isFreeTier = freeRemaining > 0;
+
+  const isFreeTier = credits === 0;
 
   const handleBuyCredits = () => {
     createCheckoutSession.mutate();
@@ -65,18 +65,18 @@ export function CreditBalance() {
       </div>
 
       <div className="space-y-3">
-        {isFreeTier ? (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Free Generations</span>
-              <span>
-                {freeRemaining} / {totalFree}
-              </span>
-            </div>
-            <Progress value={((totalFree - freeRemaining) / totalFree) * 100} className="h-1.5" />
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Free Generations</span>
+            <span className={freeUsed >= totalFree ? "font-medium text-destructive" : ""}>
+              {Math.min(freeUsed, totalFree)} / {totalFree}
+            </span>
           </div>
-        ) : (
-          <div className="flex items-center justify-between">
+          <Progress value={(Math.min(freeUsed, totalFree) / totalFree) * 100} className="h-1.5" />
+        </div>
+
+        {(credits > 0 || freeRemaining === 0) && (
+          <div className="flex items-center justify-between border-t pt-2">
             <span className="text-muted-foreground text-xs">Available Credits</span>
             <span className="font-bold text-lg">{credits}</span>
           </div>
@@ -85,12 +85,12 @@ export function CreditBalance() {
         <Dialog>
           <DialogTrigger asChild>
             <Button
-              variant={isFreeTier && freeRemaining > 0 ? "outline" : "default"}
+              variant={freeRemaining > 0 && credits === 0 ? "outline" : "default"}
               size="sm"
               className="w-full text-xs"
             >
               <CreditCard className="mr-2 h-3.5 w-3.5" />
-              {isFreeTier && freeRemaining > 0 ? "Buy More Credits" : "Refill Credits"}
+              {credits > 0 ? "Buy More Credits" : "Refill Credits"}
             </Button>
           </DialogTrigger>
           <DialogContent>

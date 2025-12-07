@@ -61,6 +61,20 @@ export const paymentRouter = createTRPCRouter({
       where: { id: ctx.session.user.id },
       select: { credits: true, freeGenerationsUsed: true },
     });
+
+    if (!user) return null;
+
+    if (user.freeGenerationsUsed === 0) {
+      const jobCount = await ctx.db.readmeJob.count({
+        where: { userId: ctx.session.user.id },
+      });
+
+      return {
+        ...user,
+        freeGenerationsUsed: Math.max(user.freeGenerationsUsed, jobCount),
+      };
+    }
+
     return user;
   }),
 });
