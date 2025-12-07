@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { SIDEBAR_ITEMS } from "@/lib/constants";
 import { logout } from "@/lib/server-actions/auth";
+import { CreditBalance } from "../credit-balance";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +61,7 @@ const AppSidebar = ({ session }: AppSidebarProps) => {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
+        <CreditBalance />
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>

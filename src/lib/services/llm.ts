@@ -183,30 +183,33 @@ STYLE REQUIREMENTS:
 
 ${customPrompt ? `CUSTOM INSTRUCTIONS:\n${customPrompt}\n` : ""}
 
-TASK: Generate a comprehensive README.md file that includes:
+TASK: Generate a comprehensive, professional README.md file.
 
-1. **Project Title & Description** - Clear, engaging title and description
-2. **Badges** (if requested) - Build status, version, license, etc.
-3. **Table of Contents** (if requested) - Well-organized navigation
-4. **Installation** - Clear setup instructions
-5. **Usage** - Examples and usage patterns
-6. **API Documentation** (if applicable) - Endpoint documentation
-7. **Configuration** - Environment variables, config files
-8. **Contributing** - Guidelines for contributors
-9. **License** - License information
-10. **Changelog** (if applicable) - Recent changes
-11. **Support** - How to get help
+STRICT RULES:
+1. OUTPUT ONLY THE MARKDOWN CONTENT.
+2. DO NOT include any conversational text, introductory phrases, or concluding remarks (e.g., "Here is the README", "Sure", "I hope this helps").
+3. DO NOT use placeholders like "[Insert License Here]" unless absolutely necessary; try to infer from context.
+4. Ensure the content is structured exactly as a README.md file.
+
+SECTIONS TO INCLUDE (if applicable):
+1. **Title & Description** - Clear, engaging title and one-paragraph description.
+2. **Badges** - Build status, version, license, etc.
+3. **Table of Contents** - Well-organized navigation.
+4. **Features** - Key capabilities.
+5. **Tech Stack** - Languages, frameworks, tools.
+6. **Installation** - Step-by-step setup instructions.
+7. **Usage** - Code snippets and usage examples.
+8. **Configuration** - Environment variables explanation.
+9. **API Documentation** - Endpoints or public methods.
+10. **Contributing** - How to contribute.
+11. **License** - License type.
 
 REQUIREMENTS:
-- Use proper Markdown formatting
-- Include code examples with syntax highlighting
-- Make it visually appealing and professional
-- Ensure all sections are relevant to the actual codebase
-- Use emojis sparingly but effectively
-- Include practical examples based on the actual file structure
-- Make installation and usage instructions specific to this project
+- Use proper Markdown formatting (headers, lists, code blocks).
+- Make it visually appealing (emojis used effectively).
+- Use the provided file structure to generate ACCURATE examples.
 
-Generate the complete README.md content now:`;
+Generate the content now:`;
 
     return prompt;
   }

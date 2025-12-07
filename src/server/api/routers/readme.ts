@@ -1,4 +1,5 @@
 import type { JobStatus } from "@prisma/client";
+import { subMinutes } from "date-fns";
 import { z } from "zod";
 import { getInstallationById } from "@/lib/services/github-installation";
 import { readmeGenerator } from "@/lib/services/readme-generator";
@@ -34,6 +35,28 @@ export const readmeRouter = createTRPCRouter({
       const installation = await getInstallationById(repository.installationId);
       if (!installation) {
         throw new Error("GitHub App installation not found");
+      }
+
+      const user = await ctx.db.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      if (user.freeGenerationsUsed < 2) {
+        await ctx.db.user.update({
+          where: { id: user.id },
+          data: { freeGenerationsUsed: { increment: 1 } },
+        });
+      } else if (user.credits > 0) {
+        await ctx.db.user.update({
+          where: { id: user.id },
+          data: { credits: { decrement: 1 } },
+        });
+      } else {
+        throw new Error("INSUFFICIENT_CREDITS");
       }
 
       const result = await readmeGenerator.queueReadmeGeneration(
@@ -100,6 +123,26 @@ export const readmeRouter = createTRPCRouter({
     const queuedJobs = await getReadmeJobsByUserId(userId, "QUEUED" as JobStatus);
     const processingJobs = await getReadmeJobsByUserId(userId, "PROCESSING" as JobStatus);
 
-    return [...queuedJobs, ...processingJobs];
+    const recentlyFinishedJobs = await ctx.db.readmeJob.findMany({
+      where: {
+        userId,
+        status: { in: ["COMPLETED", "FAILED"] },
+        updatedAt: { gt: subMinutes(new Date(), 2) },
+      },
+      include: {
+        repository: {
+          include: {
+            installation: true,
+          },
+        },
+        versions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return [...queuedJobs, ...processingJobs, ...recentlyFinishedJobs];
   }),
 });

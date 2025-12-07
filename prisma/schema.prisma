@@ -24,6 +24,10 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  stripeCustomerId    String?   @unique
+  freeGenerationsUsed Int       @default(0)
+  credits             Int       @default(0)
 }
  
 model Account {
@@ -160,6 +164,7 @@ model ReadmeJob {
   completedAt       DateTime?
   processingTime    Int?    
   retryCount        Int      @default(0)
+  stripePaymentId   String?
   
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)

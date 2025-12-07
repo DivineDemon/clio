@@ -34,6 +34,17 @@ export default function RepositoryListClient({ repositories, jobs }: RepositoryL
     model: "gemini-2.5-flash-lite",
   });
 
+  const createCheckoutSession = api.payment.createCheckoutSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url as string;
+    },
+    onError: (error) => {
+      toast.error("Failed to start payment", {
+        description: error.message,
+      });
+    },
+  });
+
   const generateReadme = api.readme.generate.useMutation({
     onSuccess: (data) => {
       toast.success("README generation queued!", {
@@ -41,21 +52,47 @@ export default function RepositoryListClient({ repositories, jobs }: RepositoryL
       });
     },
     onError: (error) => {
-      toast.error("Failed to start README generation", {
-        description: error.message,
-      });
+      if (error.message.includes("INSUFFICIENT_CREDITS")) {
+        toast.error("Insufficient Credits", {
+          description: "You have used all your free generations. Please purchase credits to continue.",
+          action: {
+            label: "Buy Credits",
+            onClick: () => {
+              // Trigger checkout session
+              createCheckoutSession.mutate();
+            },
+          },
+          duration: 10000,
+        });
+      } else {
+        toast.error("Failed to start README generation", {
+          description: error.message,
+        });
+      }
     },
+  });
+
+  const { data: activeJobs } = api.readme.getActiveJobs.useQuery(undefined, {
+    refetchInterval: 3000,
   });
 
   const jobsByRepository = useMemo(() => {
     const mapping = new Map<string, ReadmeJobWithRelations>();
+
     for (const job of jobs) {
       if (!mapping.has(job.repositoryId) || mapping.get(job.repositoryId)!.createdAt < job.createdAt) {
         mapping.set(job.repositoryId, job);
       }
     }
+
+    if (activeJobs) {
+      for (const job of activeJobs) {
+        mapping.set(job.repositoryId, job as ReadmeJobWithRelations);
+      }
+    }
+
     return mapping;
-  }, [jobs]);
+  }, [jobs, activeJobs]);
 
   const handleConfirmGenerateReadme = async () => {
     if (!selectedRepoForReadme) return;

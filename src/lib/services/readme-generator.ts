@@ -92,11 +92,7 @@ export class ReadmeGenerator {
       progress: 0,
     });
 
-    try {
-      await this.processReadmeJob(job.id, repository, installationId, normalizedOptions);
-    } catch (error) {
-      await this.failJob(job.id, "README generation failed during immediate processing", error);
-    }
+    this.scheduleJobProcessing(job.id);
 
     return {
       jobId: job.id,
