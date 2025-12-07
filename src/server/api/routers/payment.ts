@@ -59,22 +59,31 @@ export const paymentRouter = createTRPCRouter({
   getCredits: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
-      select: { credits: true, freeGenerationsUsed: true },
     });
 
     if (!user) return null;
 
-    if (user.freeGenerationsUsed === 0) {
-      const jobCount = await ctx.db.readmeJob.count({
-        where: { userId: ctx.session.user.id },
-      });
+    // Sync logic: Ensure freeGenerationsUsed reflects total jobs for legacy purposes
+    // (We assume all existing jobs count against free tier until credit system is active)
+    const totalJobCount = await ctx.db.readmeJob.count({
+      where: { userId: ctx.session.user.id },
+    });
 
-      return {
-        ...user,
-        freeGenerationsUsed: Math.max(user.freeGenerationsUsed, jobCount),
-      };
+    let effectiveFreeUsed = user.freeGenerationsUsed;
+
+    // If total jobs exceeds what we tracked as "free used", update the tracker
+    // This catches legacy jobs that happened before we started tracking
+    if (totalJobCount > user.freeGenerationsUsed) {
+      await ctx.db.user.update({
+        where: { id: user.id },
+        data: { freeGenerationsUsed: totalJobCount },
+      });
+      effectiveFreeUsed = totalJobCount;
     }
 
-    return user;
+    return {
+      ...user,
+      freeGenerationsUsed: effectiveFreeUsed,
+    };
   }),
 });
