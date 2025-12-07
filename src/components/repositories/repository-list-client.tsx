@@ -58,7 +58,6 @@ export default function RepositoryListClient({ repositories, jobs }: RepositoryL
           action: {
             label: "Buy Credits",
             onClick: () => {
-              // Trigger checkout session
               createCheckoutSession.mutate();
             },
           },
