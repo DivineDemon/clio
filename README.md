@@ -138,4 +138,4 @@ Please ensure your code adheres to the project's coding style and includes relev
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](#license) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/DivineDemon/clio/blob/main/LICENSE) file for details.
