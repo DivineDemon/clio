@@ -30,7 +30,6 @@
 | Badge                                                                               | Description                                    |
 | :---------------------------------------------------------------------------------- | :--------------------------------------------- |
 | ![GitHub last commit](https://img.shields.io/github/last-commit/DivineDemon/clio)    | Shows the date of the last commit.             |
-| ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/DivineDemon/clio/main.yml) | Placeholder for your CI/CD build status.       |
 | ![GitHub top language](https://img.shields.io/github/languages/top/DivineDemon/clio) | Indicates the primary programming language.    |
 | ![GitHub contributors](https://img.shields.io/github/contributors/DivineDemon/clio) | Shows the number of project contributors.      |
 | ![GitHub license](https://img.shields.io/github/license/DivineDemon/clio)            | Displays the project's license (e.g., MIT).    |
