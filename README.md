@@ -34,8 +34,6 @@
 | ![GitHub contributors](https://img.shields.io/github/contributors/DivineDemon/clio) | Shows the number of project contributors.      |
 | ![GitHub license](https://img.shields.io/github/license/DivineDemon/clio)            | Displays the project's license (e.g., MIT).    |
 
-**Note**: Replace `username/clio` with the actual GitHub repository path once available. For the build status, update `main.yml` to your CI/CD workflow file name.
-
 
 ## 📚 Table of Contents
 - [clio](#clio)
@@ -82,7 +80,7 @@ Before you begin, ensure you have the following installed:
 - pnpm
 - PostgreSQL database
 - GitHub Account
-- OpenAI (or equivalent LLM) API Key
+- Gemini (or equivalent LLM) API Key
 
 
 ### Clone the Repository
