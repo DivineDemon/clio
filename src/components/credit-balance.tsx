@@ -1,6 +1,7 @@
 "use client";
 
 import { CreditCard, Loader2, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +13,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/trpc/react";
 import { Progress } from "./ui/progress";
 
 export function CreditBalance() {
+  const [quantity, setQuantity] = useState(1);
   const { data: user, isLoading } = api.payment.getCredits.useQuery();
   const createCheckoutSession = api.payment.createCheckoutSession.useMutation({
     onSuccess: (data) => {
@@ -47,8 +51,16 @@ export function CreditBalance() {
   const isFreeTier = credits === 0;
 
   const handleBuyCredits = () => {
-    createCheckoutSession.mutate();
+    if (quantity < 1 || quantity > 100) {
+      toast.error("Invalid quantity", {
+        description: "Please enter a quantity between 1 and 100",
+      });
+      return;
+    }
+    createCheckoutSession.mutate({ quantity });
   };
+
+  const totalPrice = (quantity * 5).toFixed(2);
 
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm transition-all hover:bg-accent/5">
@@ -101,12 +113,38 @@ export function CreditBalance() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={quantity}
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value, 10);
+                    if (!Number.isNaN(value) && value >= 1 && value <= 100) {
+                      setQuantity(value);
+                    } else if (e.target.value === "") {
+                      setQuantity(1);
+                    }
+                  }}
+                  className="w-full"
+                />
+                <p className="text-muted-foreground text-xs">
+                  Select the number of credits you want to purchase (1-100)
+                </p>
+              </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <div className="font-medium">1 Credit</div>
-                  <div className="text-muted-foreground text-sm">Generate 1 premium README</div>
+                  <div className="font-medium">
+                    {quantity} Credit{quantity !== 1 ? "s" : ""}
+                  </div>
+                  <div className="text-muted-foreground text-sm">
+                    Generate {quantity} premium README{quantity !== 1 ? "s" : ""}
+                  </div>
                 </div>
-                <div className="font-bold text-xl">$5.00</div>
+                <div className="font-bold text-xl">${totalPrice}</div>
               </div>
             </div>
             <DialogFooter>

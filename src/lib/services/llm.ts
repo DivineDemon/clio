@@ -96,7 +96,7 @@ export class LLMService {
   ): Promise<LLMResponse> {
     const {
       style = "professional",
-      includeImages = true,
+      includeImages = false,
       includeBadges = true,
       includeToc = true,
       customPrompt,

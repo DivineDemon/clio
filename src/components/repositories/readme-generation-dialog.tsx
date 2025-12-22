@@ -97,18 +97,6 @@ export default function ReadmeGenerationDialog({
             <Label>Include Features</Label>
             <div className="space-y-3">
               <ToggleRow
-                id="include-images"
-                label="Images & Screenshots"
-                description="Include relevant images and screenshots"
-                checked={readmeSettings.includeImages}
-                onCheckedChange={(checked) =>
-                  setReadmeSettings((prev) => ({
-                    ...prev,
-                    includeImages: checked,
-                  }))
-                }
-              />
-              <ToggleRow
                 id="include-badges"
                 label="Badges & Shields"
                 description={

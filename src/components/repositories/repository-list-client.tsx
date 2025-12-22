@@ -27,7 +27,7 @@ export default function RepositoryListClient({ repositories, jobs }: RepositoryL
   const [selectedRepoForReadme, setSelectedRepoForReadme] = useState<string | null>(null);
   const [readmeSettings, setReadmeSettings] = useState<ReadmeSettings>({
     style: "professional",
-    includeImages: true,
+    includeImages: false,
     includeBadges: true,
     includeToc: true,
     customPrompt: "",
@@ -58,7 +58,7 @@ export default function RepositoryListClient({ repositories, jobs }: RepositoryL
           action: {
             label: "Buy Credits",
             onClick: () => {
-              createCheckoutSession.mutate();
+              createCheckoutSession.mutate({ quantity: 1 });
             },
           },
           duration: 10000,

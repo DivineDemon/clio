@@ -67,16 +67,19 @@ export class ContentAnalyzer {
     const octokit = await createInstallationOctokit(owner, repo);
 
     try {
-      const tree = await octokit.rest.git.getTree({
+      // CRITICAL: Only fetch root tree, not recursive - avoids timeouts on large repos
+      const rootTree = await octokit.rest.git.getTree({
         owner,
         repo,
         tree_sha: repository.defaultBranch,
-        recursive: "true",
+        recursive: "false",
       });
 
-      const treeItems = (tree.data.tree || []) as GitHubTreeItem[];
-      const structure = this.buildFileStructure(treeItems);
-      const keyFiles = await this.identifyKeyFiles(octokit, owner, repo, treeItems);
+      const treeItems = (rootTree.data.tree || []) as GitHubTreeItem[];
+      const structure = this.buildFileStructureFromRoot(treeItems);
+
+      // Fetch key files directly using Contents API (no recursive tree needed)
+      const keyFiles = await this.fetchKeyFilesDirectly(octokit, owner, repo);
 
       const packageInfo = await this.getPackageInfo(octokit, owner, repo, keyFiles);
 
@@ -109,88 +112,146 @@ export class ContentAnalyzer {
     }
   }
 
-  private buildFileStructure(tree: GitHubTreeItem[]): FileStructure {
+  private buildFileStructureFromRoot(tree: GitHubTreeItem[]): FileStructure {
     const structure: FileStructure = {};
 
+    // Only show top-level directories and files (simplified for performance)
     for (const item of tree) {
       if (item.type === "blob") {
-        const pathParts = item.path.split("/");
-        let current = structure;
-
-        for (let i = 0; i < pathParts.length - 1; i++) {
-          const part = pathParts[i];
-          if (part && !current[part]) {
-            current[part] = {};
-          }
-          if (part) {
-            current = current[part] as FileStructure;
-          }
-        }
-
-        const fileName = pathParts[pathParts.length - 1];
-        if (fileName) {
-          current[fileName] = {
-            type: "file",
-            path: item.path,
-            size: item.size || 0,
-            language: this.getLanguageFromExtension(fileName),
-          };
-        }
+        // Root-level file
+        structure[item.path || ""] = {
+          type: "file",
+          path: item.path || "",
+          size: item.size || 0,
+          language: this.getLanguageFromExtension(item.path || ""),
+        };
+      } else if (item.type === "tree") {
+        // Root-level directory - just mark it exists
+        structure[item.path || ""] = {
+          type: "file", // Simplified - just show it exists
+          path: item.path || "",
+          size: 0,
+        };
       }
     }
 
     return structure;
   }
 
-  private async identifyKeyFiles(
-    octokit: Octokit,
-    owner: string,
-    repo: string,
-    tree: GitHubTreeItem[],
-  ): Promise<KeyFile[]> {
+  // Fetch key files directly using Contents API (no recursive tree needed)
+  private async fetchKeyFilesDirectly(octokit: Octokit, owner: string, repo: string): Promise<KeyFile[]> {
     const keyFiles: KeyFile[] = [];
-    const importantFiles = [
+
+    // List of files to check (root level first, then common locations)
+    const filesToCheck = [
+      // Root level files
       "package.json",
       "README.md",
+      "README",
       "LICENSE",
+      "LICENCE",
       "CONTRIBUTING.md",
       "CHANGELOG.md",
       "Dockerfile",
       "docker-compose.yml",
-      ".github/workflows",
-      "src/index.js",
-      "src/index.ts",
-      "src/main.py",
-      "src/main.go",
-      "src/main.rs",
-      "app.py",
-      "main.py",
-      "index.js",
-      "index.ts",
-      "main.go",
-      "main.rs",
-      "Cargo.toml",
-      "go.mod",
+      "docker-compose.yaml",
       "requirements.txt",
       "Pipfile",
       "pyproject.toml",
+      "Cargo.toml",
+      "go.mod",
+      "pom.xml",
+      "composer.json",
+      "Gemfile",
+      "tsconfig.json",
+      "next.config.js",
+      "next.config.ts",
+      "vite.config.js",
+      "vite.config.ts",
+      "webpack.config.js",
+      "Makefile",
+      "CMakeLists.txt",
+      // Common entry points
+      "index.js",
+      "index.ts",
+      "main.py",
+      "main.go",
+      "main.rs",
+      "app.py",
     ];
 
-    for (const item of tree) {
-      if (item.type === "blob" && importantFiles.some((file) => item.path.includes(file))) {
-        try {
-          const content = await this.getFileContent(octokit, owner, repo, item.path);
-          keyFiles.push({
-            path: item.path,
+    // Fetch files in parallel (they'll fail fast if file doesn't exist)
+    const fetchPromises = filesToCheck.map(async (filePath) => {
+      try {
+        const content = await this.getFileContent(octokit, owner, repo, filePath);
+        if (content) {
+          return {
+            path: filePath,
             content,
-            language: this.getLanguageFromExtension(item.path),
-            importance: this.getFileImportance(item.path),
-          });
-        } catch {
-          logger.warn("Failed to get content for file", {
-            filePath: item.path,
-          });
+            language: this.getLanguageFromExtension(filePath),
+            importance: this.getFileImportance(filePath),
+          } as KeyFile;
         }
+      } catch {
+        // File doesn't exist or can't be accessed - ignore
+      }
+      return null;
+    });
+
+    // Wait for all fetches (they'll fail fast if file doesn't exist)
+    const results = await Promise.allSettled(fetchPromises);
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value) {
+        keyFiles.push(result.value);
+      }
+    }
+
+    // Also check common directories for entry points (limited depth)
+    const commonDirs = ["src", "app", "lib"];
+    for (const dir of commonDirs) {
+      try {
+        // Check if directory exists and get its contents
+        const dirContents = await octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: dir,
+        });
+
+        if (Array.isArray(dirContents.data)) {
+          // It's a directory - check for entry points
+          for (const item of dirContents.data.slice(0, 10)) {
+            // Limit to first 10 items
+            if (item.type === "file") {
+              const fileName = item.name.toLowerCase();
+              if (
+                fileName === "index.js" ||
+                fileName === "index.ts" ||
+                fileName === "main.py" ||
+                fileName === "main.go" ||
+                fileName === "main.rs" ||
+                fileName === "app.tsx" ||
+                fileName === "app.jsx"
+              ) {
+                try {
+                  const content = await this.getFileContent(octokit, owner, repo, item.path);
+                  if (content) {
+                    keyFiles.push({
+                      path: item.path,
+                      content,
+                      language: this.getLanguageFromExtension(item.path),
+                      importance: "medium",
+                    });
+                  }
+                } catch {
+                  // Ignore errors
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // Directory doesn't exist - ignore
       }
     }
 
@@ -294,8 +355,12 @@ export class ContentAnalyzer {
   }
 
   private hasTestFiles(keyFiles: KeyFile[]): boolean {
+    // Check if any key file path suggests tests
     const testPatterns = ["test", "spec", "__tests__", "tests", ".test.", ".spec."];
-    return keyFiles.some((file) => testPatterns.some((pattern) => file.path.includes(pattern)));
+    return keyFiles.some((file) => {
+      const path = file.path.toLowerCase();
+      return testPatterns.some((pattern) => path.includes(pattern));
+    });
   }
 
   private hasDocumentationFiles(keyFiles: KeyFile[]): boolean {
@@ -308,7 +373,9 @@ export class ContentAnalyzer {
   }
 
   private hasCIFiles(keyFiles: KeyFile[]): boolean {
-    return keyFiles.some((file) => file.path.includes(".github/workflows") || file.path.includes(".github/actions"));
+    // We can check for CI by looking for common CI files
+    const ciPatterns = [".github", "workflow", ".gitlab-ci", "circleci", "travis"];
+    return keyFiles.some((file) => ciPatterns.some((pattern) => file.path.toLowerCase().includes(pattern)));
   }
 
   private hasLicenseFile(keyFiles: KeyFile[]): boolean {

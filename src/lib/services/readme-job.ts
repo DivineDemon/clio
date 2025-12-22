@@ -40,7 +40,7 @@ export async function createReadmeJob(data: CreateReadmeJobData): Promise<Readme
     data: {
       repositoryId: data.repositoryId,
       userId: data.userId,
-      includeImages: data.includeImages ?? true,
+      includeImages: data.includeImages ?? false,
       includeBadges: data.includeBadges ?? true,
       includeToc: data.includeToc ?? true,
       style: data.style ?? "professional",

@@ -44,7 +44,7 @@ const Header = () => {
               <Image
                 src={Line}
                 alt="line"
-                className="-bottom-4 md:-bottom-10 lg:-bottom-8 absolute left-[20%] z-0 w-1/3 md:left-[22.5%] lg:left-[29%] lg:w-auto"
+                className="absolute -bottom-4 left-[20%] z-0 w-1/3 md:-bottom-10 md:left-[22.5%] lg:-bottom-8 lg:left-[29%] lg:w-auto"
               />
             </motion.div>
           </div>

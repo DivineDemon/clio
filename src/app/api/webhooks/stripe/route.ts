@@ -25,11 +25,19 @@ export async function POST(req: Request) {
     const userId = session.metadata?.userId;
 
     if (userId) {
+      // Get the quantity from metadata or calculate from line items
+      let quantity = 1;
+      if (session.metadata?.quantity) {
+        quantity = Number.parseInt(session.metadata.quantity, 10);
+      } else if (session.line_items?.data?.[0]?.quantity) {
+        quantity = session.line_items.data[0].quantity;
+      }
+
       await db.user.update({
         where: { id: userId },
         data: {
           credits: {
-            increment: 1,
+            increment: quantity,
           },
         },
       });

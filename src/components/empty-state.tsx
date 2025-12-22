@@ -8,7 +8,7 @@ const EmptyState = () => {
       <Image
         src={SpiderWeb}
         alt="Spider Web"
-        className="-top-2 -right-2.5 absolute size-36 opacity-50"
+        className="absolute -top-2 -right-2.5 size-36 opacity-50"
         width={144}
         height={144}
       />
@@ -22,7 +22,7 @@ const EmptyState = () => {
       <Image
         src={SpiderWeb}
         alt="Spider Web"
-        className="-bottom-2.5 -left-2 absolute size-36 rotate-180 opacity-50"
+        className="absolute -bottom-2.5 -left-2 size-36 rotate-180 opacity-50"
         width={144}
         height={144}
       />

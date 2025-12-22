@@ -2,11 +2,10 @@ import { createHash } from "node:crypto";
 import type { ReadmeJob, Repository } from "@prisma/client";
 import { env } from "@/env";
 import { logger } from "@/lib/logger";
-import { db } from "@/server/db";
 import type { RepositoryAnalysis } from "./content-analyzer";
 import { contentAnalyzer } from "./content-analyzer";
 import { llmService } from "./llm";
-import { createReadmeJob, createReadmeVersion, getReadmeJobById, updateReadmeJob } from "./readme-job";
+import { createReadmeJob, createReadmeVersion, updateReadmeJob } from "./readme-job";
 
 export interface ReadmeGenerationOptions {
   style?: "professional" | "casual" | "minimal" | "detailed";
@@ -38,24 +37,7 @@ export interface ReadmeGenerationResult {
   };
 }
 
-type JobStyle = "professional" | "casual" | "minimal" | "detailed";
-
-type JobWithRepository = ReadmeJob & {
-  repository: Repository & {
-    installation: {
-      installationId: number;
-    } | null;
-  };
-};
-
 export class ReadmeGenerator {
-  private processingJobs = new Set<string>();
-  private hasRecovered = false;
-
-  constructor() {
-    void this.recoverPendingJobs();
-  }
-
   private async failJob(jobId: string, message: string, error?: unknown) {
     if (error instanceof Error) {
       logger.error(message, error, { jobId });
@@ -92,88 +74,13 @@ export class ReadmeGenerator {
       progress: 0,
     });
 
-    this.scheduleJobProcessing(job.id);
+    // Cron job will pick up and process this job
+    // No need to schedule processing here
 
     return {
       jobId: job.id,
       status: "QUEUED",
     };
-  }
-
-  private scheduleJobProcessing(jobId: string) {
-    if (this.processingJobs.has(jobId)) {
-      return;
-    }
-
-    this.processingJobs.add(jobId);
-
-    setImmediate(() => {
-      void this.executeJob(jobId)
-        .catch(async (error) => {
-          await this.failJob(jobId, "Failed to process README job", error);
-        })
-        .finally(() => {
-          this.processingJobs.delete(jobId);
-        });
-    });
-  }
-
-  private async executeJob(jobId: string): Promise<void> {
-    const jobRecord = (await getReadmeJobById(jobId)) as JobWithRepository | null;
-
-    if (!jobRecord) {
-      logger.warn("README job not found when attempting to process", { jobId });
-      return;
-    }
-
-    if (!jobRecord.repository) {
-      await this.failJob(jobId, "Repository record missing for this job");
-      return;
-    }
-
-    if (!jobRecord.repository.installation) {
-      await this.failJob(jobId, "GitHub App installation missing for repository");
-      return;
-    }
-
-    const normalizedOptions = this.normalizeOptions(jobRecord.repository, {
-      style: (jobRecord.style as JobStyle) ?? "professional",
-      includeImages: jobRecord.includeImages,
-      includeBadges: jobRecord.includeBadges,
-      includeToc: jobRecord.includeToc,
-      customPrompt: jobRecord.customPrompt,
-    });
-
-    await this.processReadmeJob(
-      jobRecord.id,
-      jobRecord.repository,
-      jobRecord.repository.installation.installationId.toString(),
-      normalizedOptions,
-    );
-  }
-
-  private async recoverPendingJobs() {
-    if (this.hasRecovered) {
-      return;
-    }
-    this.hasRecovered = true;
-
-    try {
-      const pendingJobs = await db.readmeJob.findMany({
-        where: {
-          status: {
-            in: ["QUEUED", "PROCESSING"],
-          },
-        },
-        select: { id: true },
-      });
-
-      for (const job of pendingJobs) {
-        this.scheduleJobProcessing(job.id);
-      }
-    } catch (error) {
-      logger.error("Failed to recover pending README jobs", error as Error);
-    }
   }
 
   async processReadmeJob(
@@ -501,7 +408,7 @@ docker run -p 3000:3000 project-name
   ): NormalizedReadmeGenerationOptions {
     return {
       style: options.style ?? "professional",
-      includeImages: options.includeImages ?? true,
+      includeImages: options.includeImages ?? false,
       includeBadges: repository.isPrivate ? false : (options.includeBadges ?? true),
       includeToc: options.includeToc ?? true,
       customPrompt: options.customPrompt ?? null,

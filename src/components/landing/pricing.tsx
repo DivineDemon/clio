@@ -65,10 +65,10 @@ const Pricing = () => {
             <div className="flex size-10 items-center justify-center rounded-full bg-primary md:size-25">
               <span className="font-bold text-base text-secondary md:text-7xl">5</span>
             </div>
-            <div className="-top-10 -left-10 lg:-top-30 lg:-left-30 absolute size-20 rounded-full bg-primary lg:size-60" />
-            <div className="-top-10 -right-10 lg:-top-30 lg:-right-30 absolute size-20 rounded-full bg-primary lg:size-60" />
-            <div className="-bottom-10 -left-10 lg:-bottom-30 lg:-left-30 absolute size-20 rounded-full bg-primary lg:size-60" />
-            <div className="-bottom-10 -right-10 lg:-bottom-30 lg:-right-30 absolute size-20 rounded-full bg-primary lg:size-60" />
+            <div className="absolute -top-10 -left-10 size-20 rounded-full bg-primary lg:-top-30 lg:-left-30 lg:size-60" />
+            <div className="absolute -top-10 -right-10 size-20 rounded-full bg-primary lg:-top-30 lg:-right-30 lg:size-60" />
+            <div className="absolute -bottom-10 -left-10 size-20 rounded-full bg-primary lg:-bottom-30 lg:-left-30 lg:size-60" />
+            <div className="absolute -right-10 -bottom-10 size-20 rounded-full bg-primary lg:-right-30 lg:-bottom-30 lg:size-60" />
           </div>
         </motion.div>
       </div>
