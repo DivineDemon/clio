@@ -4,10 +4,17 @@ import { readmeGenerator } from "@/lib/services/readme-generator";
 import { db } from "@/server/db";
 
 export async function GET(request: Request) {
+  // Vercel automatically adds x-vercel-cron header for cron jobs
+  // Also support CRON_SECRET for manual testing
+  const vercelCronHeader = request.headers.get("x-vercel-cron");
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Allow if it's a Vercel cron request OR if CRON_SECRET matches
+  const isVercelCron = vercelCronHeader === "1";
+  const isAuthorizedSecret = cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+  if (!isVercelCron && !isAuthorizedSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -25,7 +32,7 @@ export async function GET(request: Request) {
           },
         },
       },
-      take: 3, // Process 3 jobs per run to stay within time limits
+      take: 10, // Process more jobs per run since it only runs once per day
       orderBy: {
         createdAt: "asc",
       },
